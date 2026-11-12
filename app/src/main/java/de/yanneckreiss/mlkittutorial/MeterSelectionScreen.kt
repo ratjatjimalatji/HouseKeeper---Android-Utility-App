@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -106,7 +107,7 @@ fun MeterSelectionScreen(
             // Electricity Card
             MeterNavigationCard(
                 icon = Icons.Default.FlashOn,
-                color = Color.Yellow,
+                color = Color(0xFFFFA500),
                 header = "Log Electricity Meter",
                 description = "Scan meter camera view or enter kilowatt-hour (kWh) readings.",
                 onClick = onNavigateToElectricity
@@ -124,9 +125,17 @@ fun MeterSelectionScreen(
             MeterNavigationCard(
                 icon = Icons.Default.LocalFireDepartment,
                 color = Color.Red,
-                header = "Gas Cylinder & Usage Tracker",
+                header = "Log propane cylinder exchanges",
                 description = "Track propane cylinder exchanges & annual gas usage.",
                 onClick = onNavigateToGas
+            )
+            // Gas Cylinder Card
+            MeterNavigationCard(
+                icon = Icons.Default.BarChart,
+                color = Color.Blue,
+                header = "Reports",
+                description = "Find utility patterns and usage reports.",
+                onClick = onNavigateToHistory
             )
         }
     }

@@ -10,9 +10,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import de.yanneckreiss.mlkittutorial.entry.data.TaskViewModel.EntryViewModel
 import de.yanneckreiss.mlkittutorial.gas.ui.GasCylinderTrackerScreen
+import de.yanneckreiss.mlkittutorial.reports.ui.ReportsScreen
 import de.yanneckreiss.mlkittutorial.ui.MainScreen
-import de.yanneckreiss.mlkittutorial.view.EntriesHistoryScreen
-//import de.yanneckreiss.mlkittutorial.view.WaterTrackerScreen
 
 object AppRoutes {
     const val METER_SELECTION = "meter_selection"
@@ -20,6 +19,7 @@ object AppRoutes {
     const val WATER_METER = "water_meter"
     const val GAS_METER = "gas_meter"
     const val ENTRIES_HISTORY = "entries_history"
+    const val REPORTS = "reports"
 }
 
 @SuppressLint("ComposeViewModelInjection")
@@ -41,17 +41,13 @@ fun AppNavHost(viewModel: EntryViewModel = hiltViewModel()) {
                     navController.navigate(AppRoutes.WATER_METER)
                 },
                 onNavigateToGas = {
-//                    viewModel.setUtilityFilter(UtilityType.GAS)
-//                    viewModel.setShowAddDialog(true)
                     navController.navigate(AppRoutes.GAS_METER)
                 },
                 onNavigateToHistory = {
-                    viewModel.setUtilityFilter(null)
-                    navController.navigate(AppRoutes.ENTRIES_HISTORY)
+                    navController.navigate(AppRoutes.REPORTS)
                 },
                 onQuickLog = {
-                    viewModel.setShowAddDialog(true)
-                    navController.navigate(AppRoutes.ENTRIES_HISTORY)
+                    navController.navigate(AppRoutes.REPORTS)
                 }
             )
         }
@@ -64,19 +60,28 @@ fun AppNavHost(viewModel: EntryViewModel = hiltViewModel()) {
             )
         }
 
-        // Water Tracker Screen (CameraX Photo + Manual Input + Estimation)
+        // Water Tracker Screen
         composable(AppRoutes.WATER_METER) {
-            //TO-DO: Add Water Scanning Screen 
-//            WaterTrackerScreen(
-//                viewModel = viewModel,
-//                onNavigateBack = { navController.popBackStack() }
-//            )
+            // TO-DO: Water Tracker Screen
         }
 
         // Gas Cylinder & Meter Logging Screen
         composable(AppRoutes.GAS_METER) {
             GasCylinderTrackerScreen(
                 entryViewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // Utility Reports & Trends Screen
+        composable(AppRoutes.REPORTS) {
+            ReportsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(AppRoutes.ENTRIES_HISTORY) {
+            ReportsScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
