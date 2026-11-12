@@ -85,4 +85,14 @@ class GasCylinderTest {
 
         assertEquals(9, cylinder.daysInStorageBeforeUse)
     }
+
+    @Test
+    fun testUniqueIdPerCylinderInstance() {
+        val c1 = GasCylinder()
+        val c2 = GasCylinder()
+
+        assertTrue(c1.id.isNotBlank())
+        assertTrue(c2.id.isNotBlank())
+        assertTrue("Each cylinder must have a unique ID", c1.id != c2.id)
+    }
 }
