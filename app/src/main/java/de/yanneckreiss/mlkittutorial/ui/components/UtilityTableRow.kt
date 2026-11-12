@@ -53,7 +53,7 @@ fun UtilityTableRow(
     val utilityIcon = when (utility) {
         UtilityType.ELECTRICITY -> Icons.Default.FlashOn
         UtilityType.WATER -> Icons.Default.WaterDrop
-        UtilityType.GAS -> Icons.Default.LocalFireDepartment
+        UtilityType.GAS, UtilityType.PROPANE -> Icons.Default.LocalFireDepartment
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
@@ -111,6 +111,7 @@ fun UtilityTableRow(
                             UtilityType.ELECTRICITY -> "Power"
                             UtilityType.WATER -> "Water"
                             UtilityType.GAS -> "Gas"
+                            UtilityType.PROPANE -> "Propane"
                         },
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,

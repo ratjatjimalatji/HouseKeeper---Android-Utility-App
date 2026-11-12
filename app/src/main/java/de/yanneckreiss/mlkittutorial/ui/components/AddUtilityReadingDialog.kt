@@ -78,7 +78,8 @@ fun AddUtilityReadingDialog(
                             when (selectedType) {
                                 UtilityType.ELECTRICITY -> "e.g. 15.4 kWh"
                                 UtilityType.WATER -> "e.g. 310.0 L"
-                                UtilityType.GAS -> "e.g. 1.2 kg"
+                                UtilityType.GAS -> "e.g. 2.5 m³"
+                                UtilityType.PROPANE -> "e.g. 1.2 kg"
                             }
                         )
                     },

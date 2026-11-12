@@ -86,6 +86,14 @@ object AnomalyDetector {
             }
             UtilityType.GAS -> {
                 AnomalyDetails(
+                    title = "Unusual Gas Consumption (+${spikePct}%)",
+                    message = "Natural gas usage measured ${value} m³ vs baseline ${((mean * 10).roundToInt() / 10.0)} m³. Accelerated burn rate detected.",
+                    actionableAdvice = "Verify stove burners and gas water heater thermostat settings.",
+                    severity = AnomalySeverity.WARNING
+                )
+            }
+            UtilityType.PROPANE -> {
+                AnomalyDetails(
                     title = "Unusual Propane Gas Depletion (+${spikePct}%)",
                     message = "Cylinder units used measured ${value} kg vs baseline ${((mean * 10).roundToInt() / 10.0)} kg. Accelerated burn rate detected.",
                     actionableAdvice = "Inspect hose connectors and regulator seal with soapy water for bubble leaks immediately. Keep area ventilated.",
