@@ -99,8 +99,8 @@ fun CameraScreen(
     val cameraController: LifecycleCameraController = remember { LifecycleCameraController(context) }
     var detectedText: String by remember { mutableStateOf("Scanning meter reading..") }
 
-    // Regex to match kWh values (e.g., "1234.5 kWh" or "1234kWh")
-    val kwhRegex = remember { Regex("""(\d+(?:\.\d+)?)\s*[kK][wW][hH]""") }
+    // Regex to match kWh values catering for optional spaces between unit letters (e.g., "1234.5 kWh", "1234.5 k Wh", "1234.5 k W h")
+    val kwhRegex = remember { Regex("""(\d+(?:\.\d+)?)\s*[kK]\s*[wW]\s*[hH]""") }
 
     val extractedKwhValue = remember(detectedText) {
         kwhRegex.find(detectedText)?.groupValues?.get(1) ?: ""
