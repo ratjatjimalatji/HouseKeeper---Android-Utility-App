@@ -47,10 +47,9 @@ fun PropaneGasCylinderComposable(
     isPlaceholderNew: Boolean = false,
     onClick: (() -> Unit)? = null
 ) {
-    // Smooth animated color transition; use greyed-out slate color if placeholder for a new cylinder
-    val targetColor = if (isPlaceholderNew) Color(0xFF90A4AE) else cylinder.color
+    // Smooth animated color transition directly tracking selected cylinder color
     val animatedColor by animateColorAsState(
-        targetValue = targetColor,
+        targetValue = cylinder.color,
         animationSpec = tween(durationMillis = 450),
         label = "cylinderColor"
     )

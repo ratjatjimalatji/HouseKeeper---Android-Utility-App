@@ -2,6 +2,9 @@ package de.yanneckreiss.mlkittutorial.gas.ui
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -31,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -128,19 +132,7 @@ fun GasCylinderTrackerScreen(
         ) {
 
             // ========================================================
-            // 1. SWIPEABLE CAROUSEL FOR SAVED CYLINDERS (WITH DOTS INDICATOR & + OPTION)
-            // ========================================================
-            item {
-                SavedCylindersSwipeableCarousel(
-                    savedCylinders = allSavedCylinders,
-                    focusedCylinderId = editingCylinder.id,
-                    onSelectCylinder = { gasViewModel.loadCylinderForEditing(it) },
-                    onAddNewCylinder = { gasViewModel.resetToNewCylinder() }
-                )
-            }
-
-            // ========================================================
-            // 2. HERO PROPANE GAS CYLINDER VISUAL PREVIEW & CAROUSEL
+            // 1. HERO DYNAMICALLY SIZED PROPANE GAS CYLINDER CAROUSEL
             // ========================================================
             item {
                 CylinderHeroVisualCard(
@@ -154,7 +146,7 @@ fun GasCylinderTrackerScreen(
             }
 
             // ========================================================
-            // 3. CYLINDER CONFIGURATION (STATUS, CAPACITY, COLOR & SAVE BUTTON)
+            // 2. CYLINDER CONFIGURATION (STATUS, CAPACITY, COLOR & SAVE BUTTON)
             // ========================================================
             item {
                 DynamicColorPaletteSection(
@@ -169,14 +161,21 @@ fun GasCylinderTrackerScreen(
                         gasViewModel.saveActiveCylinder()
                         coroutineScope.launch {
                             val actionMsg = if (isEditingSaved) "Updated ${editingCylinder.sizeKg} kg cylinder details!" else "Logged new ${editingCylinder.sizeKg} kg cylinder!"
-                            snackbarHostState.showSnackbar(message = actionMsg)
+                            val result = snackbarHostState.showSnackbar(
+                                message = actionMsg,
+                                actionLabel = "UNDO",
+                                duration = SnackbarDuration.Short
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                gasViewModel.undoLastOperation()
+                            }
                         }
                     }
                 )
             }
 
             // ========================================================
-            // 4. COLLAPSABLE SERVICE DATES & DETAILS FORM (ANIMATED)
+            // 3. COLLAPSABLE SERVICE DATES & DETAILS FORM (ANIMATED)
             // ========================================================
             item {
                 Card(
@@ -334,7 +333,7 @@ fun GasCylinderTrackerScreen(
             }
 
             // ========================================================
-            // 5. YEARLY CYLINDER LOG HISTORY
+            // 4. YEARLY CYLINDER LOG HISTORY
             // ========================================================
             item {
                 Row(
@@ -388,7 +387,20 @@ fun GasCylinderTrackerScreen(
                         isCurrentActive = cylinder.id == activeCylinder.id,
                         isFocusedForEditing = cylinder.id == editingCylinder.id,
                         onSelectForEditing = { gasViewModel.loadCylinderForEditing(it) },
-                        onDelete = { gasViewModel.deleteCylinder(cylinder.id) }
+                        onDelete = {
+                            val deletedKg = cylinder.sizeKg
+                            gasViewModel.deleteCylinder(cylinder.id)
+                            coroutineScope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "Deleted cylinder log (${deletedKg} kg)!",
+                                    actionLabel = "UNDO",
+                                    duration = SnackbarDuration.Short
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    gasViewModel.undoLastOperation()
+                                }
+                            }
+                        }
                     )
                 }
             }
@@ -420,343 +432,8 @@ fun GasCylinderTrackerScreen(
 }
 
 /**
- * Swipeable Carousel for Saved Cylinders.
- * Allows horizontal swiping between past cylinders and a + New Cylinder option.
- * Displays page dots representing visited and upcoming cylinders with peek preview.
- */
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun SavedCylindersSwipeableCarousel(
-    savedCylinders: List<GasCylinder>,
-    focusedCylinderId: String,
-    onSelectCylinder: (GasCylinder) -> Unit,
-    onAddNewCylinder: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val coroutineScope = rememberCoroutineScope()
-    val totalPages = savedCylinders.size + 1
-    val pagerState = rememberPagerState(initialPage = 0) { totalPages }
-
-    // Synchronize carousel page when focusedCylinderId changes externally
-    LaunchedEffect(focusedCylinderId, savedCylinders) {
-        val targetPage = if (savedCylinders.none { it.id == focusedCylinderId }) {
-            0
-        } else {
-            savedCylinders.indexOfFirst { it.id == focusedCylinderId } + 1
-        }
-        if (targetPage in 0 until totalPages && pagerState.currentPage != targetPage) {
-            pagerState.animateScrollToPage(targetPage)
-        }
-    }
-
-    // Synchronize focused cylinder when user swipes the carousel
-    LaunchedEffect(pagerState.currentPage) {
-        if (pagerState.currentPage == 0) {
-            if (savedCylinders.any { it.id == focusedCylinderId }) {
-                onAddNewCylinder()
-            }
-        } else {
-            val cylinderIndex = pagerState.currentPage - 1
-            if (cylinderIndex in savedCylinders.indices) {
-                val selected = savedCylinders[cylinderIndex]
-                if (selected.id != focusedCylinderId) {
-                    onSelectCylinder(selected)
-                }
-            }
-        }
-    }
-
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Header Row with title and swipe indicator status
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Saved Cylinders Carousel",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Swipe left/right to browse cylinders",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    IconButton(
-                        onClick = {
-                            if (pagerState.currentPage > 0) {
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
-                                }
-                            }
-                        },
-                        enabled = pagerState.currentPage > 0,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ChevronLeft,
-                            contentDescription = "Previous Cylinder",
-                            tint = if (pagerState.currentPage > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                        )
-                    }
-
-                    IconButton(
-                        onClick = {
-                            if (pagerState.currentPage < totalPages - 1) {
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                                }
-                            }
-                        },
-                        enabled = pagerState.currentPage < totalPages - 1,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ChevronRight,
-                            contentDescription = "Next Cylinder",
-                            tint = if (pagerState.currentPage < totalPages - 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                        )
-                    }
-                }
-            }
-
-            // Swipeable HorizontalPager with peek preview of upcoming/previous cylinders
-            HorizontalPager(
-                state = pagerState,
-                contentPadding = PaddingValues(horizontal = 24.dp),
-                pageSpacing = 12.dp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(115.dp)
-            ) { pageIndex ->
-                if (pageIndex == 0) {
-                    // Page 0: + New Cylinder Option Card
-                    Surface(
-                        onClick = onAddNewCylinder,
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                        border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(14.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "Add New Cylinder",
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(26.dp)
-                                )
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "+ Log New Cylinder",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Text(
-                                    text = "Configure details below to log a new propane cylinder exchange",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    // Page 1..N: Saved Cylinder Card
-                    val cylinder = savedCylinders[pageIndex - 1]
-                    val isFocused = cylinder.id == focusedCylinderId
-
-                    Surface(
-                        onClick = { onSelectCylinder(cylinder) },
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (isFocused) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                        border = BorderStroke(
-                            width = if (isFocused) 2.dp else 1.dp,
-                            color = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                        ),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(14.dp)
-                        ) {
-                            // Color circle preview badge
-                            Box(
-                                modifier = Modifier
-                                    .size(42.dp)
-                                    .clip(CircleShape)
-                                    .background(cylinder.color)
-                                    .border(1.dp, Color.Black.copy(alpha = 0.2f), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "${cylinder.sizeKg}k",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                            }
-
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(2.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Text(
-                                        text = "${cylinder.sizeKg} kg Cylinder",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-
-                                    if (cylinder.isActive) {
-                                        Surface(
-                                            shape = RoundedCornerShape(4.dp),
-                                            color = Color(0xFFE8F5E9)
-                                        ) {
-                                            Text(
-                                                text = "ACTIVE",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF2E7D32),
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
-                                            )
-                                        }
-                                    } else {
-                                        Surface(
-                                            shape = RoundedCornerShape(4.dp),
-                                            color = MaterialTheme.colorScheme.surfaceVariant
-                                        ) {
-                                            Text(
-                                                text = "FINISHED",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Text(
-                                    text = "Started: ${cylinder.usageStartDate} • ${cylinder.daysInUse}d in service",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-
-                                Text(
-                                    text = cylinder.supplier.ifBlank { "Gas Cylinder" },
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Medium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Pager Dots Indicator Bar (Visited vs Active vs Upcoming)
-            Column(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    for (i in 0 until totalPages) {
-                        val isSelected = i == pagerState.currentPage
-                        val isVisited = i < pagerState.currentPage
-
-                        Box(
-                            modifier = Modifier
-                                .height(8.dp)
-                                .width(if (isSelected) 22.dp else 8.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    when {
-                                        isSelected -> MaterialTheme.colorScheme.primary
-                                        isVisited -> MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                        else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
-                                    }
-                                )
-                                .clickable {
-                                    coroutineScope.launch {
-                                        pagerState.animateScrollToPage(i)
-                                    }
-                                }
-                        )
-                    }
-                }
-
-                // Subtitle explaining visited & total cylinders count
-                Text(
-                    text = if (pagerState.currentPage == 0) {
-                        "New Cylinder • ${savedCylinders.size} saved cylinder(s) available"
-                    } else {
-                        "Visited ${pagerState.currentPage} of $totalPages • Swipe left/right"
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-/**
- * Hero Visual Preview Card displaying a swipeable 3D-styled Cylinder carousel with page peeking,
- * pager indicator dots for visited/upcoming cylinders, and + option for logging new cylinders.
+ * Hero Visual Preview Card displaying a dynamically sized 3D-styled Cylinder carousel
+ * with page peeking, pager indicator dots, and new cylinder indicator.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -772,6 +449,23 @@ private fun CylinderHeroVisualCard(
     val coroutineScope = rememberCoroutineScope()
     val totalPages = savedCylinders.size + 1
     val pagerState = rememberPagerState(initialPage = 0) { totalPages }
+
+    // Dynamic 3D height based on capacity size (4kg = 200dp, 9kg = 235dp, 14kg = 270dp, 48kg = 310dp)
+    val target3DHeight: Dp = when (focusedCylinder.sizeKg) {
+        4 -> 200.dp
+        9 -> 235.dp
+        14 -> 270.dp
+        48 -> 310.dp
+        else -> 235.dp
+    }
+    val animated3DHeight by animateDpAsState(
+        targetValue = target3DHeight,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "hero3DHeight"
+    )
 
     // Synchronize carousel page when focusedCylinder changes externally
     LaunchedEffect(focusedCylinder.id, savedCylinders) {
@@ -813,7 +507,7 @@ private fun CylinderHeroVisualCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 20.dp),
+                .padding(vertical = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -821,7 +515,7 @@ private fun CylinderHeroVisualCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 18.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -833,13 +527,27 @@ private fun CylinderHeroVisualCard(
                         modifier = Modifier
                             .size(10.dp)
                             .clip(CircleShape)
-                            .background(if (focusedCylinder.isActive) Color(0xFF2E7D32) else MaterialTheme.colorScheme.outline)
+                            .background(
+                                when {
+                                    !isSavedCylinder -> Color(0xFF2E7D32)
+                                    focusedCylinder.isActive -> Color(0xFF2E7D32)
+                                    else -> MaterialTheme.colorScheme.outline
+                                }
+                            )
                     )
                     Text(
-                        text = if (focusedCylinder.isActive) "ACTIVE IN SERVICE" else "USED UP / FINISHED",
+                        text = when {
+                            !isSavedCylinder -> "NEW • UNUSED LOG"
+                            focusedCylinder.isActive -> "ACTIVE IN SERVICE"
+                            else -> "USED UP / FINISHED"
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = if (focusedCylinder.isActive) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = when {
+                            !isSavedCylinder -> Color(0xFF2E7D32)
+                            focusedCylinder.isActive -> Color(0xFF2E7D32)
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                     )
                 }
 
@@ -848,7 +556,7 @@ private fun CylinderHeroVisualCard(
                     color = if (isSavedCylinder) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer
                 ) {
                     Text(
-                        text = if (isSavedCylinder) "Editing Focused Cylinder" else "+ New Cylinder",
+                        text = if (isSavedCylinder) "Editing Saved ${focusedCylinder.sizeKg} kg" else "+ New Cylinder Template",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = if (isSavedCylinder) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
@@ -857,7 +565,7 @@ private fun CylinderHeroVisualCard(
                 }
             }
 
-            // Swipeable 3D Visual HorizontalPager with Page Peeking
+            // Swipeable 3D Visual HorizontalPager with Dynamic Sizing & Page Peeking
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -873,7 +581,7 @@ private fun CylinderHeroVisualCard(
                     },
                     enabled = pagerState.currentPage > 0,
                     modifier = Modifier
-                        .padding(start = 4.dp)
+                        .padding(start = 2.dp)
                         .size(32.dp)
                 ) {
                     Icon(
@@ -889,14 +597,14 @@ private fun CylinderHeroVisualCard(
                     pageSpacing = 12.dp,
                     modifier = Modifier
                         .weight(1f)
-                        .height(210.dp)
+                        .height(animated3DHeight)
                 ) { pageIndex ->
                     val displayCylinder = if (pageIndex == 0) focusedCylinder else savedCylinders[pageIndex - 1]
                     val isPlaceholder = pageIndex == 0
 
                     Surface(
                         shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                        color = if (isPlaceholder) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                         border = BorderStroke(
                             width = if (pageIndex == pagerState.currentPage) 2.dp else 1.dp,
                             color = if (pageIndex == pagerState.currentPage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
@@ -929,7 +637,7 @@ private fun CylinderHeroVisualCard(
                     },
                     enabled = pagerState.currentPage < totalPages - 1,
                     modifier = Modifier
-                        .padding(end = 4.dp)
+                        .padding(end = 2.dp)
                         .size(32.dp)
                 ) {
                     Icon(
@@ -941,20 +649,24 @@ private fun CylinderHeroVisualCard(
             }
 
             // Quick Spec Badges
-            Row(
+            LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 18.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                QuickSpecBadge(label = "Capacity", value = "${focusedCylinder.sizeKg} kg")
-                QuickSpecBadge(label = "Days Active", value = "${focusedCylinder.daysInUse}d")
+                item{
+                QuickSpecBadge(label = "Capacity", value = "${focusedCylinder.sizeKg} kg")}
+                item {
+                QuickSpecBadge(label = "Days Active", value = "${focusedCylinder.daysInUse}d")}
+                item{
                 QuickSpecBadge(label = "Est. Left", value = "${focusedCylinder.estimatedRemainingDays}d")
+            }
             }
 
             // Pager Dots Indicator Bar (Visited vs Active vs Upcoming)
             Column(
-                modifier = Modifier.padding(horizontal = 20.dp),
+                modifier = Modifier.padding(horizontal = 18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
@@ -989,7 +701,7 @@ private fun CylinderHeroVisualCard(
 
                 Text(
                     text = if (pagerState.currentPage == 0) {
-                        "New Cylinder Preview • Swipe 3D view to browse saved"
+                        "✨ New Unused Cylinder • Tap color swatches below to customize"
                     } else {
                         "Visited ${pagerState.currentPage} of $totalPages cylinders • Swipe 3D view"
                     },
@@ -1081,30 +793,6 @@ private fun DynamicColorPaletteSection(
                     )
                 }
 
-                Surface(
-                    onClick = onTapCycleColor,
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Palette,
-                            contentDescription = "Cycle Color",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Text(
-                            text = "Cycle Color",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
             }
 
             Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))

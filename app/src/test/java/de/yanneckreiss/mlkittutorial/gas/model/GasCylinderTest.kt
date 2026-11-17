@@ -95,4 +95,19 @@ class GasCylinderTest {
         assertTrue(c2.id.isNotBlank())
         assertTrue("Each cylinder must have a unique ID", c1.id != c2.id)
     }
+
+    @Test
+    fun testCylinderCopyAndUndoReversion() {
+        val original = GasCylinder(sizeKg = 9, notes = "Original Note")
+        val edited = original.copy(notes = "Edited Note", sizeKg = 14)
+
+        assertEquals("Edited Note", edited.notes)
+        assertEquals(14, edited.sizeKg)
+
+        // Simulating UNDO reversion back to original
+        val reverted = edited.copy(notes = original.notes, sizeKg = original.sizeKg)
+        assertEquals("Original Note", reverted.notes)
+        assertEquals(9, reverted.sizeKg)
+        assertEquals(original.id, reverted.id)
+    }
 }

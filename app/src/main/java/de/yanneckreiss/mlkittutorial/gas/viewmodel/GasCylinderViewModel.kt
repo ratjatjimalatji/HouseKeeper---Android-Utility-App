@@ -170,10 +170,32 @@ class GasCylinderViewModel @Inject constructor(
         _editingCylinder.value = list[prevIdx]
     }
 
+    private var lastStateSnapshot: Triple<GasCylinder, List<GasCylinder>, GasCylinder>? = null
+
+    private fun captureSnapshot() {
+        lastStateSnapshot = Triple(
+            repository.activeCylinder.value,
+            repository.cylinderHistory.value,
+            _editingCylinder.value
+        )
+    }
+
+    /**
+     * Reverts the cylinder state (active cylinder, history list, and editing form)
+     * back to what it was before performing the save/update or deletion.
+     */
+    fun undoLastOperation() {
+        val snapshot = lastStateSnapshot ?: return
+        repository.restoreStateSnapshot(snapshot.first, snapshot.second)
+        _editingCylinder.value = snapshot.third
+        lastStateSnapshot = null
+    }
+
     /**
      * Saves the current editing cylinder (active or finished/used-up).
      */
     fun saveActiveCylinder() {
+        captureSnapshot()
         val current = _editingCylinder.value
         val all = allSavedCylinders.value
         val exists = all.any { it.id == current.id }
@@ -217,6 +239,7 @@ class GasCylinderViewModel @Inject constructor(
     }
 
     fun deleteCylinder(id: String) {
+        captureSnapshot()
         repository.deleteCylinder(id)
     }
 }

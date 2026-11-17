@@ -19,6 +19,10 @@ class EntryRepositoryImpl @Inject constructor(
         return getAllEntries()
     }
 
+    override suspend fun insertSingle(newEntry: Entry): Long {
+        return entryDao.insertSingle(newEntry)
+    }
+
     override suspend fun insertList(entries: List<Entry>) {
         entryDao.insertList(entries)
     }

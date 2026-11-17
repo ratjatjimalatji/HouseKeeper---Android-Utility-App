@@ -178,6 +178,17 @@ class GasCylinderRepository @Inject constructor(
         }
     }
 
+    /**
+     * Restores a previously captured state snapshot for undo functionality.
+     */
+    fun restoreStateSnapshot(active: GasCylinder, history: List<GasCylinder>) {
+        _activeCylinder.value = active
+        saveActiveCylinderToPrefs(active)
+
+        _cylinderHistory.value = history
+        saveHistoryToPrefs(history)
+    }
+
     private fun GasCylinder.toDto(): GasCylinderDto {
         return GasCylinderDto(
             id = id,
