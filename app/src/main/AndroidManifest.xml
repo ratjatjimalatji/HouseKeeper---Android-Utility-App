@@ -32,7 +32,9 @@
 
         <activity
             android:name="de.yanneckreiss.mlkittutorial.MainActivity"
-            android:exported="true" android:theme="@style/Theme.JetpackComposeMLKitTutorial">
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.JetpackComposeMLKitTutorial">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
