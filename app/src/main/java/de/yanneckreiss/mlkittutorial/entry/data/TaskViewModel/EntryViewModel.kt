@@ -11,6 +11,8 @@ import de.yanneckreiss.mlkittutorial.entry.domain.model.*
 import de.yanneckreiss.mlkittutorial.entry.domain.repository.IEntryRepository
 import de.yanneckreiss.mlkittutorial.entry.domain.util.AnomalyDetector
 import de.yanneckreiss.mlkittutorial.export.UtilityExportManager
+import de.yanneckreiss.mlkittutorial.reports.domain.model.MonthOption
+import de.yanneckreiss.mlkittutorial.reports.domain.util.TrendsProjectionEngine
 import de.yanneckreiss.mlkittutorial.worker.UtilityAnomalyWorker
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -25,7 +27,8 @@ import kotlin.math.roundToInt
 
 @HiltViewModel
 class EntryViewModel @Inject constructor(
-    private val repository: IEntryRepository
+    private val repository: IEntryRepository,
+    private val projectionEngine: TrendsProjectionEngine
 ) : ViewModel() {
 
     // Current date helpers using kotlinx.datetime
@@ -171,11 +174,28 @@ class EntryViewModel @Inject constructor(
         val cal = Calendar.getInstance()
         val currentDay = cal.get(Calendar.DAY_OF_MONTH)
         val maxDays = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
-        val daysRemaining = (maxDays - currentDay).coerceAtLeast(1)
+        val daysRemaining = (maxDays - currentDay).coerceAtLeast(0)
 
-        val totalUnitsMonthToDate = matchingEntries.sumOf { it.unitsUsed }
-        val dailyUnitsBurnRate = if (currentDay > 0) totalUnitsMonthToDate / currentDay else 9.0
-        val projectedTotalUnits = totalUnitsMonthToDate + (dailyUnitsBurnRate * daysRemaining)
+        // Logs are meter readings: usage comes from the difference between consecutive
+        // readings, spread over the days between them (shared logic with the Reports screen).
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        val currentMonth = MonthOption(
+            monthKey = "${today.year}-${today.monthNumber.toString().padStart(2, '0')}",
+            displayName = "",
+            year = today.year,
+            month = today.monthNumber,
+            isCurrentMonth = true
+        )
+        val graphPoints = projectionEngine.generateReportGraphPoints(currentMonth, targetType, matchingEntries)
+        val monthly = projectionEngine.calculateMonthlyProjection(graphPoints, targetType, previousMonthUnits = 0.0)
+
+        val totalUnitsMonthToDate = monthly.actualUnitsSoFar
+        val dailyUnitsBurnRate = if (monthly.daysPassed > 0) {
+            monthly.actualUnitsSoFar / monthly.daysPassed
+        } else {
+            graphPoints.firstOrNull()?.value ?: 0.0
+        }
+        val projectedTotalUnits = monthly.projectedMonthEndUnits
 
         ConsumptionVelocity(
             totalUnitsUsedMonthToDate = totalUnitsMonthToDate,

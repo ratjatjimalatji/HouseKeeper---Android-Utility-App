@@ -19,6 +19,7 @@ data class ReportGraphPoint(
     val meterReading: Double? = null,
     val isLoggedReading: Boolean = false, // True if user manually logged a reading on this exact date
     val isProjected: Boolean = false, // True for future days in the month
+    val isMeasured: Boolean = false, // True if usage for this day was derived from two consecutive meter readings
     val weatherImpactScore: Double = 0.0,
     val notes: String = ""
 )

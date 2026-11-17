@@ -59,23 +59,18 @@ class ReportsViewModel @Inject constructor(
             entries = filteredEntries
         )
 
-        // Previous month data for percentage calculation
-        val prevMonthKey = getPreviousMonthKey(month.year, month.month)
-        val prevMonthEntries = entries.filter {
-            it.detectedUtilityType == utility && it.monthKey == prevMonthKey
-        }
-        val prevMonthTotal = if (prevMonthEntries.isNotEmpty()) {
-            prevMonthEntries.sumOf { it.unitsUsed }
-        } else {
-            getDefaultPreviousMonthUnits(utility)
-        }
+        // Previous month usage, derived from the difference between meter readings
+        val (prevYear, prevMonth) = getPreviousMonth(month.year, month.month)
+        val prevMonthTotal = projectionEngine.calculateMonthTotal(prevYear, prevMonth, utility, filteredEntries)
+            ?: getDefaultPreviousMonthUnits(utility)
 
         val weeklyProj = projectionEngine.calculateWeeklyProjection(graphPoints, utility)
         val monthlyProj = projectionEngine.calculateMonthlyProjection(graphPoints, utility, prevMonthTotal)
 
         val loggedCount = graphPoints.count { it.isLoggedReading }
-        val avgDaily = if (graphPoints.isNotEmpty()) graphPoints.map { it.value }.average() else 0.0
-        val peakDaily = if (graphPoints.isNotEmpty()) graphPoints.maxOf { it.value } else 0.0
+        val measuredPoints = graphPoints.filter { it.isMeasured }.ifEmpty { graphPoints }
+        val avgDaily = if (measuredPoints.isNotEmpty()) measuredPoints.map { it.value }.average() else 0.0
+        val peakDaily = if (measuredPoints.isNotEmpty()) measuredPoints.maxOf { it.value } else 0.0
 
         ReportsUiState(
             selectedUtility = utility,
@@ -126,11 +121,8 @@ class ReportsViewModel @Inject constructor(
         }
     }
 
-    private fun getPreviousMonthKey(year: Int, month: Int): String {
-        val prevMonth = if (month > 1) month - 1 else 12
-        val prevYear = if (month > 1) year else year - 1
-        return "$prevYear-${prevMonth.toString().padStart(2, '0')}"
-    }
+    private fun getPreviousMonth(year: Int, month: Int): Pair<Int, Int> =
+        if (month > 1) year to month - 1 else year - 1 to 12
 
     companion object {
         private fun createAvailableMonthsList(currentYear: Int, currentMonth: Int): List<MonthOption> {

@@ -8,8 +8,11 @@ import de.yanneckreiss.mlkittutorial.reports.domain.model.MonthlyProjection
 import de.yanneckreiss.mlkittutorial.reports.domain.model.ReportGraphPoint
 import de.yanneckreiss.mlkittutorial.reports.domain.model.WeeklyProjection
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.daysUntil
+import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
 import java.util.Locale
 import javax.inject.Inject
@@ -17,11 +20,68 @@ import javax.inject.Singleton
 import kotlin.math.abs
 
 /**
- * Domain Service responsible for calculating weekly/monthly trend projections,
- * interpolating trends between logged meter readings, and generating graph data points.
+ * Domain Service responsible for turning logged meter readings into daily usage,
+ * and calculating weekly/monthly projections from that usage.
+ *
+ * A logged entry is a METER READING, not a purchase. Usage is derived from the
+ * difference between two consecutive readings, spread evenly over the days between them:
+ *
+ *   Day 1 reading = 140 kWh, Day 5 reading = 90 kWh
+ *   -> 50 kWh used over 4 days -> 12.5 kWh/day for days 2, 3, 4 and 5.
+ *
+ * The absolute difference is used so both count-down (prepaid) and count-up meters work.
  */
 @Singleton
 class TrendsProjectionEngine @Inject constructor() {
+
+    private data class Reading(val date: LocalDate, val value: Double)
+
+    /** One reading per date (the latest logged that day), sorted oldest first. */
+    private fun extractReadings(entries: List<Entry>, utilityType: UtilityType): List<Reading> =
+        entries
+            .asSequence()
+            .filter { it.detectedUtilityType == utilityType && it.meterReading > 0.0 }
+            .mapNotNull { entry ->
+                runCatching { LocalDate.parse(entry.date) }.getOrNull()?.let { entry to it }
+            }
+            .sortedWith(compareBy({ it.second }, { it.first.timestamp }, { it.first.id }))
+            .toList()
+            .associate { (entry, date) -> date to entry.meterReading } // last reading of a day wins
+            .map { (date, value) -> Reading(date, value) }
+
+    /**
+     * Daily usage for every day covered by two consecutive readings.
+     * The days after the earlier reading up to and including the later reading
+     * each receive (difference / days elapsed).
+     */
+    private fun buildDailyUsage(readings: List<Reading>): Map<LocalDate, Double> {
+        val usage = mutableMapOf<LocalDate, Double>()
+        readings.zipWithNext { previous, current ->
+            val daysElapsed = previous.date.daysUntil(current.date)
+            if (daysElapsed <= 0) return@zipWithNext
+            val perDay = abs(current.value - previous.value) / daysElapsed
+            var day = previous.date.plus(1, DateTimeUnit.DAY)
+            while (day <= current.date) {
+                usage[day] = perDay
+                day = day.plus(1, DateTimeUnit.DAY)
+            }
+        }
+        return usage
+    }
+
+    /** Average measured daily usage over the most recent [window] measured days up to [upTo]. */
+    private fun recentMeasuredRate(
+        dailyUsage: Map<LocalDate, Double>,
+        upTo: LocalDate,
+        window: Int = 30
+    ): Double? = dailyUsage
+        .filterKeys { it <= upTo }
+        .toSortedMap()
+        .values
+        .toList()
+        .takeLast(window)
+        .takeIf { it.isNotEmpty() }
+        ?.average()
 
     fun generateReportGraphPoints(
         monthOption: MonthOption,
@@ -31,100 +91,117 @@ class TrendsProjectionEngine @Inject constructor() {
         val daysInMonth = getDaysInMonth(monthOption.year, monthOption.month)
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
 
-        // Map entries by day number
-        val entriesByDay = mutableMapOf<Int, Entry>()
-        entries.forEach { entry ->
-            try {
-                val parsedDate = LocalDate.parse(entry.date)
-                if (parsedDate.year == monthOption.year && parsedDate.monthNumber == monthOption.month) {
-                    if (entry.detectedUtilityType == utilityType) {
-                        entriesByDay[parsedDate.dayOfMonth] = entry
-                    }
-                }
-            } catch (_: Exception) {}
-        }
+        // Readings from ALL months are used so the first reading of this month can be
+        // paired with the last reading of the previous month.
+        val readings = extractReadings(entries, utilityType)
+        val readingsByDate = readings.associate { it.date to it.value }
+        val dailyUsage = buildDailyUsage(readings)
 
-        // Calculate baseline daily burn rate from logged entries or fallback defaults
-        val loggedEntriesList = entriesByDay.values.toList()
-        val calculatedDailyRate = if (loggedEntriesList.isNotEmpty()) {
-            val totalUnits = loggedEntriesList.sumOf { it.unitsUsed }
-            (totalUnits / loggedEntriesList.size.coerceAtLeast(1)).coerceAtLeast(0.5)
-        } else {
-            getDefaultDailyRate(utilityType)
-        }
+        val monthEnd = LocalDate(monthOption.year, monthOption.month, daysInMonth)
+        val monthStart = LocalDate(monthOption.year, monthOption.month, 1)
+        val measuredThisMonth = dailyUsage.filterKeys { it in monthStart..monthEnd }.values
 
-        val resultPoints = mutableListOf<ReportGraphPoint>()
-        var lastLoggedUnits = calculatedDailyRate
+        // Rate used to fill days without measured usage (future days, or days after the latest reading)
+        val fillRate = measuredThisMonth.takeIf { it.isNotEmpty() }?.average()
+            ?: recentMeasuredRate(dailyUsage, monthEnd)
+            ?: getDefaultDailyRate(utilityType)
 
-        for (day in 1..daysInMonth) {
+        return (1..daysInMonth).map { day ->
             val date = LocalDate(monthOption.year, monthOption.month, day)
-            val isFuture = date > today && monthOption.isCurrentMonth
             val dayLabel = "${getMonthShortName(monthOption.month)} $day"
+            val reading = readingsByDate[date]
+            val measured = dailyUsage[date]
+            val entry = entries.lastOrNull { it.date == date.toString() && it.detectedUtilityType == utilityType }
 
-            val loggedEntry = entriesByDay[day]
-            if (loggedEntry != null) {
-                // Exact reading logged on this date
-                lastLoggedUnits = loggedEntry.unitsUsed
-                resultPoints.add(
-                    ReportGraphPoint(
-                        date = date,
-                        dayLabel = dayLabel,
-                        value = loggedEntry.unitsUsed,
-                        meterReading = loggedEntry.meterReading,
-                        isLoggedReading = true,
-                        isProjected = false,
-                        weatherImpactScore = loggedEntry.weatherScore,
-                        notes = loggedEntry.description
-                    )
+            when {
+                measured != null -> ReportGraphPoint(
+                    date = date,
+                    dayLabel = dayLabel,
+                    value = measured,
+                    meterReading = reading,
+                    isLoggedReading = reading != null,
+                    isProjected = false,
+                    isMeasured = true,
+                    weatherImpactScore = entry?.weatherScore ?: 20.0,
+                    notes = if (reading != null) entry?.description.orEmpty() else "Interpolated between readings"
                 )
-            } else {
-                // Trend point between logged readings or projected future day
-                val trendValue = if (isFuture) {
-                    calculatedDailyRate
-                } else {
-                    // Interpolate slight variation around average
-                    val variationFactor = 0.90 + (day % 5) * 0.05
-                    (lastLoggedUnits * variationFactor).coerceAtLeast(0.2)
-                }
 
-                resultPoints.add(
+                reading != null -> ReportGraphPoint(
+                    // First reading on record: no earlier reading to measure usage against yet.
+                    date = date,
+                    dayLabel = dayLabel,
+                    value = fillRate,
+                    meterReading = reading,
+                    isLoggedReading = true,
+                    isProjected = false,
+                    isMeasured = false,
+                    weatherImpactScore = entry?.weatherScore ?: 20.0,
+                    notes = "First reading (usage estimated)"
+                )
+
+                else -> {
+                    val isFuture = date > today
                     ReportGraphPoint(
                         date = date,
                         dayLabel = dayLabel,
-                        value = trendValue,
+                        value = fillRate,
                         meterReading = null,
                         isLoggedReading = false,
                         isProjected = isFuture,
+                        isMeasured = false,
                         weatherImpactScore = 20.0,
-                        notes = if (isFuture) "Projected" else "Trend Interpolation"
+                        notes = if (isFuture) "Projected" else "Estimated (awaiting next reading)"
                     )
-                )
+                }
             }
         }
+    }
 
-        return resultPoints
+    /**
+     * Total usage for a whole month: measured usage plus the estimated fill for days
+     * not yet covered by readings. Returns null when no usage could be measured that month.
+     */
+    fun calculateMonthTotal(
+        year: Int,
+        month: Int,
+        utilityType: UtilityType,
+        entries: List<Entry>
+    ): Double? {
+        val points = generateReportGraphPoints(
+            MonthOption(monthKey = "", displayName = "", year = year, month = month),
+            utilityType,
+            entries
+        )
+        return if (points.any { it.isMeasured }) points.sumOf { it.value } else null
     }
 
     fun calculateWeeklyProjection(
         graphPoints: List<ReportGraphPoint>,
         utilityType: UtilityType
     ): WeeklyProjection {
-        val loggedPoints = graphPoints.filter { it.isLoggedReading }
-        val dailyRate = if (loggedPoints.isNotEmpty()) {
-            loggedPoints.map { it.value }.average()
+        val measuredUsage = graphPoints.filter { it.isMeasured }.sortedBy { it.date }.map { it.value }
+
+        // Daily rate = average measured usage over the last 7 measured days
+        val recentWeek = measuredUsage.takeLast(7)
+        val previousWeek = measuredUsage.dropLast(7).takeLast(7)
+
+        val dailyRate = recentWeek.takeIf { it.isNotEmpty() }?.average()
+            ?: graphPoints.firstOrNull()?.value
+            ?: getDefaultDailyRate(utilityType)
+
+        val previousRate = previousWeek.takeIf { it.isNotEmpty() }?.average()
+        val percentageChange = if (previousRate != null && previousRate > 0.0) {
+            ((dailyRate - previousRate) / previousRate) * 100.0
         } else {
-            getDefaultDailyRate(utilityType)
+            0.0
         }
 
-        val weeklyProjectedUnits = dailyRate * 7.0
-        val trendPercentage = 4.2 // Default projected trend indicator
-        val direction = if (trendPercentage >= 0) TrendDirection.INCREASING else TrendDirection.DECREASING
-
         return WeeklyProjection(
-            projectedUnits = weeklyProjectedUnits,
+            projectedUnits = dailyRate * 7.0,
             dailyBurnRate = dailyRate,
-            trendPercentage = trendPercentage,
-            trendDirection = direction
+            trendPercentage = abs(percentageChange),
+            trendDirection = trendDirectionFor(percentageChange),
+            comparisonLabel = if (previousRate != null) "vs previous week" else "Log more readings to see a trend"
         )
     }
 
@@ -133,35 +210,42 @@ class TrendsProjectionEngine @Inject constructor() {
         utilityType: UtilityType,
         previousMonthUnits: Double
     ): MonthlyProjection {
-        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-        val daysPassed = graphPoints.count { it.date <= today || !it.isProjected }
-        val daysRemaining = graphPoints.size - daysPassed
+        // Usage actually measured from readings so far this month
+        val measuredPoints = graphPoints.filter { it.isMeasured }
+        val actualUnitsSoFar = measuredPoints.sumOf { it.value }
+        val measuredDays = measuredPoints.size
+        val remainingDays = graphPoints.size - measuredDays
 
-        val actualUnitsSoFar = graphPoints.filter { !it.isProjected }.sumOf { it.value }
-        val avgDailyRate = if (daysPassed > 0) actualUnitsSoFar / daysPassed else getDefaultDailyRate(utilityType)
-        val projectedMonthEndUnits = actualUnitsSoFar + (avgDailyRate * daysRemaining)
+        val avgDailyRate = if (measuredDays > 0) {
+            actualUnitsSoFar / measuredDays
+        } else {
+            graphPoints.firstOrNull()?.value ?: getDefaultDailyRate(utilityType)
+        }
+
+        // Month-end total = measured so far + measured daily rate for every day not yet covered by readings
+        val projectedMonthEndUnits = actualUnitsSoFar + (avgDailyRate * remainingDays)
 
         val percentageChange = if (previousMonthUnits > 0) {
             ((projectedMonthEndUnits - previousMonthUnits) / previousMonthUnits) * 100.0
         } else {
-            5.8
-        }
-
-        val direction = when {
-            percentageChange > 2.0 -> TrendDirection.INCREASING
-            percentageChange < -2.0 -> TrendDirection.DECREASING
-            else -> TrendDirection.STABLE
+            0.0
         }
 
         return MonthlyProjection(
             projectedMonthEndUnits = projectedMonthEndUnits,
             actualUnitsSoFar = actualUnitsSoFar,
-            daysPassed = daysPassed,
-            daysRemaining = daysRemaining,
+            daysPassed = measuredDays,
+            daysRemaining = remainingDays,
             trendPercentage = abs(percentageChange),
-            trendDirection = direction,
+            trendDirection = trendDirectionFor(percentageChange),
             comparisonLabel = "vs last month (${String.format(Locale.US, "%.1f", previousMonthUnits)} ${utilityType.defaultUnit})"
         )
+    }
+
+    private fun trendDirectionFor(percentageChange: Double): TrendDirection = when {
+        percentageChange > 2.0 -> TrendDirection.INCREASING
+        percentageChange < -2.0 -> TrendDirection.DECREASING
+        else -> TrendDirection.STABLE
     }
 
     private fun getDefaultDailyRate(utilityType: UtilityType): Double {
