@@ -371,7 +371,11 @@ class EntryViewModel @Inject constructor(
     /**
      * Backward-compatible method used by ML Kit Camera Screen
      */
-    fun addScannedReading(kwhStr: String, description: String = "Electricity Meter Scan") {
+    fun addScannedReading(
+        kwhStr: String,
+        description: String? = null,
+        utilityType: UtilityType = UtilityType.ELECTRICITY
+    ) {
         viewModelScope.launch {
             val readingValue = kwhStr.toDoubleOrNull() ?: return@launch
             val now = System.currentTimeMillis()
@@ -379,10 +383,12 @@ class EntryViewModel @Inject constructor(
             val dateStr = sdf.format(Date(now))
             val cal = Calendar.getInstance()
 
-            val taggedDescription = if (description.contains("[Electricity]")) {
-                description
+            val tag = "[${utilityType.displayName}]"
+            val baseDescription = description?.takeIf { it.isNotBlank() } ?: "${utilityType.displayName} Meter Scan"
+            val taggedDescription = if (baseDescription.contains(tag)) {
+                baseDescription
             } else {
-                "[Electricity] [Actual] $description"
+                "$tag [Actual] $baseDescription"
             }
 
             val newEntry = Entry(

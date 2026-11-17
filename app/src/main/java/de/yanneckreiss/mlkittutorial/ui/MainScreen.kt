@@ -12,6 +12,7 @@ import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import de.yanneckreiss.mlkittutorial.entry.data.TaskViewModel.EntryViewModel
+import de.yanneckreiss.mlkittutorial.entry.data.local.UtilityType
 import de.yanneckreiss.mlkittutorial.ui.camera.CameraScreen
 import de.yanneckreiss.mlkittutorial.ui.no_permission.NoPermissionScreen
 
@@ -20,6 +21,7 @@ import de.yanneckreiss.mlkittutorial.ui.no_permission.NoPermissionScreen
 @Composable
 fun MainScreen(
     viewModel: EntryViewModel = hiltViewModel(),
+    utilityType: UtilityType = UtilityType.ELECTRICITY,
     onNavigateBack: () -> Unit
 ) {
     val cameraPermissionState: PermissionState = rememberPermissionState(Manifest.permission.CAMERA)
@@ -27,6 +29,7 @@ fun MainScreen(
     if (cameraPermissionState.status.isGranted) {
         CameraScreen(
             viewModel = viewModel,
+            utilityType = utilityType,
             onNavigateBack = onNavigateBack
         )
     } else {

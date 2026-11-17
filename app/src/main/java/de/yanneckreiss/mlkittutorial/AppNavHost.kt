@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import de.yanneckreiss.mlkittutorial.entry.data.TaskViewModel.EntryViewModel
+import de.yanneckreiss.mlkittutorial.entry.data.local.UtilityType
 import de.yanneckreiss.mlkittutorial.gas.ui.GasCylinderTrackerScreen
 import de.yanneckreiss.mlkittutorial.reports.ui.ReportsScreen
 import de.yanneckreiss.mlkittutorial.settings.ui.SettingsScreen
@@ -65,9 +66,13 @@ fun AppNavHost(viewModel: EntryViewModel = hiltViewModel()) {
             )
         }
 
-        // Water Tracker Screen
+        // Water Meter Scanner Screen (same CameraX + OCR flow as electricity)
         composable(AppRoutes.WATER_METER) {
-            // TO-DO: Water Tracker Screen
+            MainScreen(
+                viewModel = viewModel,
+                utilityType = UtilityType.WATER,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
 
         // Gas Cylinder & Meter Logging Screen
