@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import de.yanneckreiss.mlkittutorial.entry.data.TaskViewModel.EntryViewModel
 import de.yanneckreiss.mlkittutorial.gas.ui.GasCylinderTrackerScreen
 import de.yanneckreiss.mlkittutorial.reports.ui.ReportsScreen
+import de.yanneckreiss.mlkittutorial.settings.ui.SettingsScreen
 import de.yanneckreiss.mlkittutorial.ui.MainScreen
 
 object AppRoutes {
@@ -20,6 +21,7 @@ object AppRoutes {
     const val GAS_METER = "gas_meter"
     const val ENTRIES_HISTORY = "entries_history"
     const val REPORTS = "reports"
+    const val SETTINGS = "settings"
 }
 
 @SuppressLint("ComposeViewModelInjection")
@@ -45,6 +47,9 @@ fun AppNavHost(viewModel: EntryViewModel = hiltViewModel()) {
                 },
                 onNavigateToHistory = {
                     navController.navigate(AppRoutes.REPORTS)
+                },
+                onNavigateToSettings = {
+                    navController.navigate(AppRoutes.SETTINGS)
                 },
                 onQuickLog = {
                     navController.navigate(AppRoutes.REPORTS)
@@ -82,6 +87,13 @@ fun AppNavHost(viewModel: EntryViewModel = hiltViewModel()) {
 
         composable(AppRoutes.ENTRIES_HISTORY) {
             ReportsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // Settings & OCR Model Downloader Screen
+        composable(AppRoutes.SETTINGS) {
+            SettingsScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

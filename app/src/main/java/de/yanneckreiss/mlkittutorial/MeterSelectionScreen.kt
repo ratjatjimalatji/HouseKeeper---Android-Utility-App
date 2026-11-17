@@ -10,7 +10,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -28,6 +28,7 @@ fun MeterSelectionScreen(
     onNavigateToWater: () -> Unit,
     onNavigateToGas: () -> Unit,
     onNavigateToHistory: () -> Unit,
+    onNavigateToSettings: () -> Unit = {},
     onQuickLog: () -> Unit
 ) {
     Surface(
@@ -49,6 +50,15 @@ fun MeterSelectionScreen(
                             "Utility Tracking & Analytics",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "OCR & App Settings",
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -121,6 +131,7 @@ fun MeterSelectionScreen(
                 description = "Snap water meter photo & input reading to estimate usage.",
                 onClick = onNavigateToWater
             )
+
             // Gas Cylinder Card
             MeterNavigationCard(
                 icon = Icons.Default.LocalFireDepartment,
@@ -129,7 +140,8 @@ fun MeterSelectionScreen(
                 description = "Track propane cylinder exchanges & annual gas usage.",
                 onClick = onNavigateToGas
             )
-            // Gas Cylinder Card
+
+            // Reports & Analytics Card
             MeterNavigationCard(
                 icon = Icons.Default.BarChart,
                 color = Color.Blue,
