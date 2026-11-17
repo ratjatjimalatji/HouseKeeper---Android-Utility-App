@@ -18,7 +18,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.daysUntil
 import kotlinx.datetime.todayIn
 import javax.inject.Inject
 
@@ -183,20 +185,26 @@ class ReportsViewModel @Inject constructor(
             var idCounter = 1000
             for ((desc, baseReading, avgStep) in utilityConfigs) {
                 var currentReading = baseReading
-                // Create entries for October, September, August 2026
+                var previousDate: LocalDate? = null
+                // Create entries oldest first (August, September, October 2026) so the
+                // meter reading only ever climbs over time, like a real meter
                 val monthDates = listOf(
-                    Triple(2026, 10, listOf(3, 8, 15, 22, 28)),
+                    Triple(2026, 8, listOf(4, 11, 18, 25)),
                     Triple(2026, 9, listOf(2, 9, 16, 23, 30)),
-                    Triple(2026, 8, listOf(4, 11, 18, 25))
+                    Triple(2026, 10, listOf(3, 8, 15, 22, 28))
                 )
 
                 for ((y, m, days) in monthDates) {
                     val monthKey = "$y-${m.toString().padStart(2, '0')}"
                     for (day in days) {
+                        val date = LocalDate(y, m, day)
+                        val daysElapsed = previousDate?.daysUntil(date) ?: 7
+                        previousDate = date
+
                         val prev = currentReading
                         val step = avgStep * (0.8 + (day % 4) * 0.15)
-                        currentReading += step * 6 // 6 days between readings
-                        val dateStr = "$y-${m.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}"
+                        currentReading += step * daysElapsed // usage for the days since the last reading
+                        val dateStr = date.toString()
 
                         list.add(
                             Entry(
@@ -206,7 +214,7 @@ class ReportsViewModel @Inject constructor(
                                 meterReading = currentReading,
                                 previousReadingValue = prev,
                                 unitsConsumedSinceLastVisit = currentReading - prev,
-                                daysElapsedSinceLastReading = 6,
+                                daysElapsedSinceLastReading = daysElapsed,
                                 weatherScore = 25.0 + (day % 3) * 5,
                                 temperatureCelsius = 18.0 + (day % 4),
                                 description = desc
