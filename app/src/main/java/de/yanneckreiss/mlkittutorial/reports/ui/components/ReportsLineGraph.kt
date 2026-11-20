@@ -112,6 +112,26 @@ fun ReportsLineGraph(
                         style = MaterialTheme.typography.labelSmall,
                         color = onSurfaceVariant
                     )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Canvas(modifier = Modifier.size(16.dp, 8.dp)) {
+                            drawLine(
+                                color = primaryColor,
+                                start = Offset(0f, size.height / 2f),
+                                end = Offset(size.width, size.height / 2f),
+                                strokeWidth = 2.dp.toPx(),
+                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f))
+                            )
+                        }
+                        Text(
+                            text = "Dotted Trend",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
 
                 // Legend
@@ -132,28 +152,6 @@ fun ReportsLineGraph(
                         )
                         Text(
                             text = "Logged Reading",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = onSurfaceVariant,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    // Dotted Line Legend
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Canvas(modifier = Modifier.size(16.dp, 8.dp)) {
-                            drawLine(
-                                color = primaryColor,
-                                start = Offset(0f, size.height / 2f),
-                                end = Offset(size.width, size.height / 2f),
-                                strokeWidth = 2.dp.toPx(),
-                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f))
-                            )
-                        }
-                        Text(
-                            text = "Dotted Trend",
                             style = MaterialTheme.typography.labelSmall,
                             color = onSurfaceVariant,
                             fontWeight = FontWeight.Medium
