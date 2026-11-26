@@ -63,6 +63,7 @@ fun UtilityFilterBar(
                     UtilityType.ELECTRICITY -> Icons.Default.FlashOn
                     UtilityType.WATER -> Icons.Default.WaterDrop
                     UtilityType.GAS -> Icons.Default.LocalFireDepartment
+                    UtilityType.PROPANE -> Icons.Default.LocalFireDepartment
                 }
                 FilterChip(
                     selected = selectedUtility == type,

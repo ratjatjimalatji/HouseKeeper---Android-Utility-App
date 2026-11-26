@@ -23,7 +23,7 @@ object WeatherCorrelationEngine {
         return when (type) {
             UtilityType.ELECTRICITY -> analyzeElectricity(temp, humidity, cloud, score)
             UtilityType.WATER -> analyzeWater(temp, rain, humidity, score)
-            UtilityType.GAS -> analyzeGas(temp, wind, score)
+            UtilityType.GAS, UtilityType.PROPANE -> analyzeGas(temp, wind, score)
         }
     }
 

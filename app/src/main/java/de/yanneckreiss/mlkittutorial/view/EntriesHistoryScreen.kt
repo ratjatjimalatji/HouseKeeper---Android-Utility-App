@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import de.yanneckreiss.mlkittutorial.entry.data.TaskViewModel.EntryViewModel
 import de.yanneckreiss.mlkittutorial.entry.data.local.UtilityType
 import de.yanneckreiss.mlkittutorial.entry.domain.model.ChartDataPoint
@@ -55,7 +56,11 @@ fun EntriesHistoryScreen(
 
     val currentUtilityType = selectedUtility ?: UtilityType.ELECTRICITY
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -207,7 +212,20 @@ fun EntriesHistoryScreen(
                                 isEvenRow = index % 2 == 0,
                                 baselineAverage = dailyAverage,
                                 onOpenFullDetail = { viewModel.openDetailSheet(it) },
-                                onDeleteEntry = { viewModel.deleteEntry(it) }
+                                onDeleteEntry = { entryToDelete ->
+                                    val utilityLabel = entryToDelete.detectedUtilityType.displayName
+                                    viewModel.deleteEntry(entryToDelete)
+                                    coroutineScope.launch {
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = "Deleted $utilityLabel reading!",
+                                            actionLabel = "UNDO",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            viewModel.undoLastAction()
+                                        }
+                                    }
+                                }
                             )
                         }
                     }
@@ -230,6 +248,16 @@ fun EntriesHistoryScreen(
                 onDismiss = { viewModel.setShowAddDialog(false) },
                 onConfirm = { type, reading, desc, temp, score ->
                     viewModel.addManualReading(type, reading, desc, temp, score)
+                    coroutineScope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = "Logged ${type.displayName} reading (${reading} ${type.defaultUnit})!",
+                            actionLabel = "UNDO",
+                            duration = SnackbarDuration.Short
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            viewModel.undoLastAction()
+                        }
+                    }
                 }
             )
         }

@@ -10,6 +10,7 @@ import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import de.yanneckreiss.mlkittutorial.ocr.OcrModelManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -19,6 +20,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 class TextRecognitionAnalyzer(
+    private val ocrModelManager: OcrModelManager? = null,
     private val onDetectedTextUpdated: (String) -> Unit
 ) : ImageAnalysis.Analyzer {
 
@@ -38,9 +40,10 @@ class TextRecognitionAnalyzer(
             suspendCoroutine { continuation ->
                 textRecognizer.process(inputImage)
                     .addOnSuccessListener { visionText: Text ->
-                        val detectedText: String = visionText.text
-                        if (detectedText.isNotBlank()) {
-                            onDetectedTextUpdated(detectedText)
+                        val rawText: String = visionText.text
+                        if (rawText.isNotBlank()) {
+                            val normalizedText = ocrModelManager?.normalizeDetectedText(rawText) ?: rawText
+                            onDetectedTextUpdated(normalizedText)
                         }
                     }
                     .addOnCompleteListener {

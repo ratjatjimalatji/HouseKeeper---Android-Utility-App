@@ -6,52 +6,48 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.yanneckreiss.mlkittutorial.gas.model.GasCylinder
+import kotlinx.coroutines.delay
 
 /**
  * A modern, beautifully rendered propane gas cylinder composable.
  * Displays dynamic colors, realistic 3D cylindrical specular highlights,
  * authentic propane valve & shroud collar, and dynamically adjusts its dimensions
  * according to the selected size (4kg, 9kg, 14kg, 48kg).
+ * Supports [isPlaceholderNew] to display a greyed-out default gas cylinder with dashed border lines.
  */
 @Composable
 fun PropaneGasCylinderComposable(
     cylinder: GasCylinder,
     modifier: Modifier = Modifier,
     isInteractive: Boolean = true,
+    isPlaceholderNew: Boolean = false,
     onClick: (() -> Unit)? = null
 ) {
-    // Smooth animated color transition when dynamic color changes
+    // Smooth animated color transition directly tracking selected cylinder color
     val animatedColor by animateColorAsState(
         targetValue = cylinder.color,
         animationSpec = tween(durationMillis = 450),
@@ -100,7 +96,7 @@ fun PropaneGasCylinderComposable(
     ) {
         LaunchedEffect(isTapped) {
             if (isTapped) {
-                kotlinx.coroutines.delay(120)
+                delay(120)
                 isTapped = false
             }
         }
@@ -115,16 +111,18 @@ fun PropaneGasCylinderComposable(
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawPropaneCylinder(
                     baseColor = animatedColor,
-                    sizeKg = cylinder.sizeKg
+                    sizeKg = cylinder.sizeKg,
+                    isPlaceholderNew = isPlaceholderNew
                 )
             }
 
             // Embedded Stencil Label on the cylinder body
             CylinderDecalLabel(
                 sizeKg = cylinder.sizeKg,
+                isPlaceholderNew = isPlaceholderNew,
                 modifier = Modifier
                     .padding(bottom = (animatedHeight.value * 0.28f).dp)
-                    .width(100.dp)
+                    .width(105.dp)
             )
         }
 
@@ -139,8 +137,8 @@ fun PropaneGasCylinderComposable(
             drawOval(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        Color.Black.copy(alpha = 0.28f),
-                        Color.Black.copy(alpha = 0.08f),
+                        Color.Black.copy(alpha = if (isPlaceholderNew) 0.15f else 0.28f),
+                        Color.Black.copy(alpha = 0.05f),
                         Color.Transparent
                     ),
                     center = Offset(size.width / 2f, size.height / 2f),
@@ -156,7 +154,8 @@ fun PropaneGasCylinderComposable(
  */
 private fun DrawScope.drawPropaneCylinder(
     baseColor: Color,
-    sizeKg: Int
+    sizeKg: Int,
+    isPlaceholderNew: Boolean
 ) {
     val totalWidth = size.width
     val totalHeight = size.height
@@ -175,10 +174,10 @@ private fun DrawScope.drawPropaneCylinder(
     val bodyBottom = totalHeight - footRingHeight - (domeHeight * 0.65f)
     val bodyHeight = bodyBottom - bodyTop
 
-    // Derive lighting shades from dynamic color
-    val darkShade = baseColor.darken(0.35f)
-    val lightHighlight = baseColor.lighten(0.35f)
-    val specularWhite = Color.White.copy(alpha = 0.45f)
+    // Derive lighting shades from base color
+    val darkShade = baseColor.darken(if (isPlaceholderNew) 0.20f else 0.35f)
+    val lightHighlight = baseColor.lighten(if (isPlaceholderNew) 0.20f else 0.35f)
+    val specularWhite = Color.White.copy(alpha = if (isPlaceholderNew) 0.25f else 0.45f)
 
     // 3D Cylindrical lighting brush
     val cylinderBrush = Brush.horizontalGradient(
@@ -202,7 +201,7 @@ private fun DrawScope.drawPropaneCylinder(
     )
 
     // ==========================================
-    // 1. FOOT RING / BASE STAND (Welded bottom)
+    // 1. FOOT RING / BASE STAND
     // ==========================================
     val footRingWidth = when (sizeKg) {
         4 -> bodyWidth * 0.90f
@@ -212,7 +211,6 @@ private fun DrawScope.drawPropaneCylinder(
     val footRingLeft = (totalWidth - footRingWidth) / 2f
     val footRingTop = totalHeight - footRingHeight
 
-    // Foot ring shadow/inner dark area
     drawRoundRect(
         color = darkShade.darken(0.4f),
         topLeft = Offset(footRingLeft, footRingTop),
@@ -220,7 +218,6 @@ private fun DrawScope.drawPropaneCylinder(
         cornerRadius = CornerRadius(6.dp.toPx(), 6.dp.toPx())
     )
 
-    // Foot ring outer face with gradient
     drawRoundRect(
         brush = cylinderBrush,
         topLeft = Offset(footRingLeft + 2.dp.toPx(), footRingTop + 1.dp.toPx()),
@@ -228,7 +225,6 @@ private fun DrawScope.drawPropaneCylinder(
         cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
     )
 
-    // Base ventilation / drainage slot (typical of propane cylinders)
     val slotWidth = footRingWidth * 0.25f
     val slotHeight = footRingHeight * 0.4f
     drawRoundRect(
@@ -239,7 +235,7 @@ private fun DrawScope.drawPropaneCylinder(
     )
 
     // ==========================================
-    // 2. LOWER DOME (Bottom of the tank)
+    // 2. LOWER DOME
     // ==========================================
     val lowerDomeTop = bodyBottom - (domeHeight * 0.4f)
     drawRoundRect(
@@ -258,14 +254,13 @@ private fun DrawScope.drawPropaneCylinder(
         size = Size(bodyWidth, bodyHeight)
     )
 
-    // Specular 3D shine strip on main body
     drawRect(
         brush = shineBrush,
         topLeft = Offset(bodyLeft + bodyWidth * 0.28f, bodyTop),
         size = Size(bodyWidth * 0.17f, bodyHeight)
     )
 
-    // Circumferential Welded Seam Bead (Center factory weld line)
+    // Circumferential Welded Seam Bead
     val weldY = bodyTop + bodyHeight * 0.52f
     drawLine(
         color = darkShade.darken(0.3f),
@@ -280,7 +275,6 @@ private fun DrawScope.drawPropaneCylinder(
         strokeWidth = 1.2.dp.toPx()
     )
 
-    // Top circumferential weld line
     val topWeldY = bodyTop + 4.dp.toPx()
     drawLine(
         color = darkShade.darken(0.2f),
@@ -290,7 +284,7 @@ private fun DrawScope.drawPropaneCylinder(
     )
 
     // ==========================================
-    // 4. UPPER DOME (Shoulder)
+    // 4. UPPER DOME
     // ==========================================
     drawRoundRect(
         brush = cylinderBrush,
@@ -299,7 +293,6 @@ private fun DrawScope.drawPropaneCylinder(
         cornerRadius = CornerRadius(bodyWidth * 0.45f, bodyWidth * 0.45f)
     )
 
-    // Specular highlight on upper shoulder
     drawRoundRect(
         brush = shineBrush,
         topLeft = Offset(bodyLeft + bodyWidth * 0.28f, collarHeight),
@@ -314,16 +307,14 @@ private fun DrawScope.drawPropaneCylinder(
     val valveBaseY = collarHeight + (domeHeight * 0.35f)
     val valveTopY = valveBaseY - valveHeight
 
-    // Brass fitting base
-    val brassColor = Color(0xFFD4AF37)
-    val brassDark = Color(0xFF997A15)
+    val brassColor = if (isPlaceholderNew) Color(0xFFB0BEC5) else Color(0xFFD4AF37)
+    val brassDark = if (isPlaceholderNew) Color(0xFF78909C) else Color(0xFF997A15)
     val brassBrush = Brush.horizontalGradient(
         listOf(brassDark, brassColor, brassDark),
         startX = valveCenterX - 10.dp.toPx(),
         endX = valveCenterX + 10.dp.toPx()
     )
 
-    // Valve stem
     drawRoundRect(
         brush = brassBrush,
         topLeft = Offset(valveCenterX - 6.dp.toPx(), valveTopY + 8.dp.toPx()),
@@ -331,30 +322,28 @@ private fun DrawScope.drawPropaneCylinder(
         cornerRadius = CornerRadius(2.dp.toPx(), 2.dp.toPx())
     )
 
-    // Horizontal gas outlet port (pointing to the right)
     drawRoundRect(
         brush = brassBrush,
         topLeft = Offset(valveCenterX + 3.dp.toPx(), valveTopY + 12.dp.toPx()),
         size = Size(10.dp.toPx(), 7.dp.toPx()),
         cornerRadius = CornerRadius(1.dp.toPx(), 1.dp.toPx())
     )
-    // Outlet nozzle opening
+
     drawCircle(
         color = Color(0xFF333333),
         center = Offset(valveCenterX + 13.dp.toPx(), valveTopY + 15.5.dp.toPx()),
         radius = 2.dp.toPx()
     )
 
-    // Black/Dark Handwheel Shut-off Knob on top
     val knobWidth = 24.dp.toPx()
     val knobHeight = 7.dp.toPx()
     drawRoundRect(
-        color = Color(0xFF1E1E1E),
+        color = if (isPlaceholderNew) Color(0xFF546E7A) else Color(0xFF1E1E1E),
         topLeft = Offset(valveCenterX - knobWidth / 2f, valveTopY),
         size = Size(knobWidth, knobHeight),
         cornerRadius = CornerRadius(3.dp.toPx(), 3.dp.toPx())
     )
-    // Knob serrations / grips
+
     for (i in 0..4) {
         val lineX = (valveCenterX - knobWidth / 2f) + (knobWidth / 5f) * i + 2.dp.toPx()
         drawLine(
@@ -372,7 +361,6 @@ private fun DrawScope.drawPropaneCylinder(
     val collarLeft = (totalWidth - collarWidth) / 2f
     val collarTop = 4.dp.toPx()
 
-    // Outer Shroud shape
     val shroudPath = Path().apply {
         addRoundRect(
             RoundRect(
@@ -400,7 +388,6 @@ private fun DrawScope.drawPropaneCylinder(
         )
     )
 
-    // Rolled Top Rim highlight on Collar
     drawRoundRect(
         color = lightHighlight.copy(alpha = 0.7f),
         topLeft = Offset(collarLeft, collarTop),
@@ -408,40 +395,50 @@ private fun DrawScope.drawPropaneCylinder(
         cornerRadius = CornerRadius(2.dp.toPx(), 2.dp.toPx())
     )
 
-    // Handhold Cutouts (Left and Right oval slots in the collar)
     val handleSlotWidth = collarWidth * 0.28f
     val handleSlotHeight = collarHeight * 0.40f
     val handleSlotTop = collarTop + collarHeight * 0.32f
 
-    // Left handle slot cutout
     drawRoundRect(
         color = Color(0x3D000000),
         topLeft = Offset(collarLeft + 5.dp.toPx(), handleSlotTop),
         size = Size(handleSlotWidth, handleSlotHeight),
         cornerRadius = CornerRadius(handleSlotHeight / 2f, handleSlotHeight / 2f)
-    )
-    drawRoundRect(
-        color = lightHighlight.copy(alpha = 0.3f),
-        topLeft = Offset(collarLeft + 5.dp.toPx(), handleSlotTop),
-        size = Size(handleSlotWidth, handleSlotHeight),
-        cornerRadius = CornerRadius(handleSlotHeight / 2f, handleSlotHeight / 2f),
-        style = Stroke(width = 1.dp.toPx())
     )
 
-    // Right handle slot cutout
     drawRoundRect(
         color = Color(0x3D000000),
         topLeft = Offset(collarLeft + collarWidth - handleSlotWidth - 5.dp.toPx(), handleSlotTop),
         size = Size(handleSlotWidth, handleSlotHeight),
         cornerRadius = CornerRadius(handleSlotHeight / 2f, handleSlotHeight / 2f)
     )
-    drawRoundRect(
-        color = lightHighlight.copy(alpha = 0.3f),
-        topLeft = Offset(collarLeft + collarWidth - handleSlotWidth - 5.dp.toPx(), handleSlotTop),
-        size = Size(handleSlotWidth, handleSlotHeight),
-        cornerRadius = CornerRadius(handleSlotHeight / 2f, handleSlotHeight / 2f),
-        style = Stroke(width = 1.dp.toPx())
-    )
+
+    // ==========================================
+    // 7. DASHED BORDER OVERLAY FOR NEW CYLINDER
+    // ==========================================
+    if (isPlaceholderNew) {
+        val dashEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f), 0f)
+        val outlinePath = Path().apply {
+            addRoundRect(
+                RoundRect(
+                    left = bodyLeft - 3.dp.toPx(),
+                    top = collarTop - 2.dp.toPx(),
+                    right = bodyRight + 3.dp.toPx(),
+                    bottom = totalHeight - 2.dp.toPx(),
+                    cornerRadius = CornerRadius(16.dp.toPx(), 16.dp.toPx())
+                )
+            )
+        }
+
+        drawPath(
+            path = outlinePath,
+            color = Color(0xFF1976D2), // Accent blue dash border
+            style = Stroke(
+                width = 2.5.dp.toPx(),
+                pathEffect = dashEffect
+            )
+        )
+    }
 }
 
 /**
@@ -450,45 +447,75 @@ private fun DrawScope.drawPropaneCylinder(
 @Composable
 private fun CylinderDecalLabel(
     sizeKg: Int,
+    isPlaceholderNew: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = modifier,
-        color = Color.White.copy(alpha = 0.92f),
-        shape = RoundedCornerShape(8.dp),
-        shadowElevation = 2.dp
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 6.dp, vertical = 5.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+    if (isPlaceholderNew) {
+        Surface(
+            modifier = modifier,
+            color = Color(0xFFE3F2FD),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.5.dp, Color(0xFF1976D2)),
+            shadowElevation = 2.dp
         ) {
-            // Flammable Gas Icon & Warning Tag
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp, vertical = 5.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.width(3.dp))
                 Text(
-                    text = "CYLINDER SIZE",
-                    color = Color(0xFFC62828),
-                    fontSize = 10.sp,
+                    text = "+ NEW CYLINDER",
+                    color = Color(0xFF1565C0),
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.sp
+                    letterSpacing = 0.5.sp
+                )
+                Text(
+                    text = "POPULATE",
+                    color = Color(0xFF0D47A1),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = (-0.5).sp
                 )
             }
+        }
+    } else {
+        Surface(
+            modifier = modifier,
+            color = Color.White.copy(alpha = 0.92f),
+            shape = RoundedCornerShape(8.dp),
+            shadowElevation = 2.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp, vertical = 5.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "CYLINDER SIZE",
+                        color = Color(0xFFC62828),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp
+                    )
+                }
 
-            // Big Stamped Size Display
-            Text(
-                text = "$sizeKg kg",
-                color = Color(0xFF212121),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = (-0.5).sp,
-                lineHeight = 18.sp
-            )
+                Text(
+                    text = "$sizeKg kg",
+                    color = Color(0xFF212121),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = (-0.5).sp,
+                    lineHeight = 18.sp
+                )
+            }
         }
     }
 }

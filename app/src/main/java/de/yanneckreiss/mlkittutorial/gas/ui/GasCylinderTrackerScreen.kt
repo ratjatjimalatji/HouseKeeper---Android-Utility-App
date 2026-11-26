@@ -2,9 +2,15 @@ package de.yanneckreiss.mlkittutorial.gas.ui
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,6 +19,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,12 +31,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.yanneckreiss.mlkittutorial.entry.data.TaskViewModel.EntryViewModel
@@ -36,7 +43,10 @@ import de.yanneckreiss.mlkittutorial.gas.model.CylinderSizeInfoList
 import de.yanneckreiss.mlkittutorial.gas.model.GasCylinder
 import de.yanneckreiss.mlkittutorial.gas.viewmodel.GasCylinderViewModel
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 @SuppressLint("ComposeModifierMissing")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,20 +59,20 @@ fun GasCylinderTrackerScreen(
     val editingCylinder by gasViewModel.editingCylinder.collectAsStateWithLifecycle()
     val activeCylinder by gasViewModel.activeCylinder.collectAsStateWithLifecycle()
     val cylinderHistory by gasViewModel.cylinderHistory.collectAsStateWithLifecycle()
-    val electricityEntries by entryViewModel.visibleEntries.collectAsStateWithLifecycle()
+    val allSavedCylinders by gasViewModel.allSavedCylinders.collectAsStateWithLifecycle()
 
     // Date picker dialog states
     var showBoughtDatePicker by remember { mutableStateOf(false) }
     var showUsageDatePicker by remember { mutableStateOf(false) }
 
+    // State for collapsable Service Dates & Details card
+    var showServiceDetails by remember { mutableStateOf(false) }
+
     // Snackbar host state for feedback
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    // Calculate electricity total logged kWh
-    val totalElectricityKwh = remember(electricityEntries) {
-        electricityEntries.sumOf { it.meterReading }
-    }
+    val isEditingSaved = allSavedCylinders.any { it.id == editingCylinder.id }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -75,9 +85,9 @@ fun GasCylinderTrackerScreen(
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         Text(
-                            text = "Propane & Utility Tracking",
+                            text = if (isEditingSaved) "Editing Saved Cylinder" else "Log New Gas Cylinder",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -90,11 +100,19 @@ fun GasCylinderTrackerScreen(
                     }
                 },
                 actions = {
+                    // + New Cylinder Action Button
+                    IconButton(onClick = { gasViewModel.resetToNewCylinder() }) {
+                        Icon(
+                            imageVector = Icons.Default.AddCircleOutline,
+                            contentDescription = "Log New Cylinder",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                     IconButton(onClick = { gasViewModel.onCycleColor() }) {
                         Icon(
                             imageVector = Icons.Outlined.Palette,
                             contentDescription = "Cycle Cylinder Color",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.secondary
                         )
                     }
                 },
@@ -114,30 +132,50 @@ fun GasCylinderTrackerScreen(
         ) {
 
             // ========================================================
-            // 2. HERO PROPANE GAS CYLINDER COMPOSABLE PREVIEW
+            // 1. HERO DYNAMICALLY SIZED PROPANE GAS CYLINDER CAROUSEL
             // ========================================================
             item {
                 CylinderHeroVisualCard(
-                    cylinder = editingCylinder,
+                    savedCylinders = allSavedCylinders,
+                    focusedCylinder = editingCylinder,
+                    isSavedCylinder = isEditingSaved,
+                    onSelectCylinder = { gasViewModel.loadCylinderForEditing(it) },
+                    onAddNewCylinder = { gasViewModel.resetToNewCylinder() },
                     onTapCycleColor = { gasViewModel.onCycleColor() }
                 )
             }
 
             // ========================================================
-            // 3. CYLINDER CONFIGURATION (SIZE & COLOR PALETTE)
+            // 2. CYLINDER CONFIGURATION (STATUS, CAPACITY, COLOR & SAVE BUTTON)
             // ========================================================
             item {
                 DynamicColorPaletteSection(
                     cylinder = editingCylinder,
+                    isSavedCylinder = isEditingSaved,
                     colors = gasViewModel.availableColors,
                     onSizeSelected = { size -> gasViewModel.onSizeSelected(size) },
+                    onStatusSelected = { isActive -> gasViewModel.onIsActiveChanged(isActive) },
                     onColorSelected = { color -> gasViewModel.onColorSelected(color) },
-                    onTapCycleColor = { gasViewModel.onCycleColor() }
+                    onTapCycleColor = { gasViewModel.onCycleColor() },
+                    onSaveCylinder = {
+                        gasViewModel.saveActiveCylinder()
+                        coroutineScope.launch {
+                            val actionMsg = if (isEditingSaved) "Updated ${editingCylinder.sizeKg} kg cylinder details!" else "Logged new ${editingCylinder.sizeKg} kg cylinder!"
+                            val result = snackbarHostState.showSnackbar(
+                                message = actionMsg,
+                                actionLabel = "UNDO",
+                                duration = SnackbarDuration.Short
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                gasViewModel.undoLastOperation()
+                            }
+                        }
+                    }
                 )
             }
 
             // ========================================================
-            // 4. SERVICE DATES & DETAILS FORM
+            // 3. COLLAPSABLE SERVICE DATES & DETAILS FORM (ANIMATED)
             // ========================================================
             item {
                 Card(
@@ -145,147 +183,157 @@ fun GasCylinderTrackerScreen(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(
-                            text = "Service Dates & Details",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        // 4.1 Size Dropdown Selector (4, 9, 14, 48 kg)
-
-
-                        // 4.2 Date Pickers: Bought Date & Usage Start Date
+                        // Collapsable Header Row
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showServiceDetails = !showServiceDetails },
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Bought Date Picker Card
-                            DatePickerDisplayCard(
-                                modifier = Modifier.weight(1f),
-                                label = "Bought Date",
-                                emoji = "🛒",
-                                date = editingCylinder.boughtDate,
-                                onClick = { showBoughtDatePicker = true }
-                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Service Dates & Details (Optional)",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (showServiceDetails) "Tap to hide dates, supplier & notes" else "Tap to edit bought date, usage start & notes",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
 
-                            // Usage Start Date Picker Card
-                            DatePickerDisplayCard(
-                                modifier = Modifier.weight(1f),
-                                label = "Usage Start",
-                                emoji = "🔥",
-                                date = editingCylinder.usageStartDate,
-                                onClick = { showUsageDatePicker = true }
-                            )
-                        }
-
-                        // Usage Insights Pill
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                            IconButton(
+                                onClick = { showServiceDetails = !showServiceDetails }
                             ) {
-                                Column {
-                                    Text(
-                                        text = "Duration in Service",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text(
-                                        text = "${editingCylinder.daysInUse} days active",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(
-                                        text = "Stored Prior",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text(
-                                        text = "${editingCylinder.daysInStorageBeforeUse} days storage",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
+                                Icon(
+                                    imageVector = if (showServiceDetails) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                    contentDescription = "Toggle Details",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
                             }
                         }
 
-                        // Supplier / Depot text field
-                        OutlinedTextField(
-                            value = editingCylinder.supplier,
-                            onValueChange = { gasViewModel.onSupplierChanged(it) },
-                            label = { Text("Supplier / Brand (Optional)") },
-                            leadingIcon = {
-                                Icon(Icons.Outlined.Storefront, contentDescription = null)
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            singleLine = true
-                        )
+                        // Animated Visibility for opening/closing Service Dates & Details
+                        AnimatedVisibility(
+                            visible = showServiceDetails,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                        // Notes text field
-                        OutlinedTextField(
-                            value = editingCylinder.notes,
-                            onValueChange = { gasViewModel.onNotesChanged(it) },
-                            label = { Text("Notes / Location (e.g. Kitchen Stove)") },
-                            leadingIcon = {
-                                Icon(Icons.Outlined.EditNote, contentDescription = null)
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            maxLines = 2
-                        )
+                                // Date Pickers: Bought Date & Usage Start Date
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    DatePickerDisplayCard(
+                                        modifier = Modifier.weight(1f),
+                                        label = "Bought Date",
+                                        emoji = "🛒",
+                                        date = editingCylinder.boughtDate,
+                                        onClick = { showBoughtDatePicker = true }
+                                    )
 
-                        // Save / Log Cylinder Exchange Button
-                        Button(
-                            onClick = {
-                                gasViewModel.saveActiveCylinder()
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        message = "Recorded ${editingCylinder.sizeKg} kg cylinder exchange!"
+                                    DatePickerDisplayCard(
+                                        modifier = Modifier.weight(1f),
+                                        label = "Usage Start",
+                                        emoji = "🔥",
+                                        date = editingCylinder.usageStartDate,
+                                        onClick = { showUsageDatePicker = true }
                                     )
                                 }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Save & Log Cylinder Exchange",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
-                            )
+
+                                // Usage Insights Pill
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Column {
+                                            Text(
+                                                text = "Duration in Service",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = "${editingCylinder.daysInUse} days active",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        }
+                                        Column(horizontalAlignment = Alignment.End) {
+                                            Text(
+                                                text = "Stored Prior",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = "${editingCylinder.daysInStorageBeforeUse} days storage",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Supplier / Depot text field
+                                OutlinedTextField(
+                                    value = editingCylinder.supplier,
+                                    onValueChange = { gasViewModel.onSupplierChanged(it) },
+                                    label = { Text("Supplier / Brand (Optional)") },
+                                    leadingIcon = {
+                                        Icon(Icons.Outlined.Storefront, contentDescription = null)
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    singleLine = true
+                                )
+
+                                // Notes text field
+                                OutlinedTextField(
+                                    value = editingCylinder.notes,
+                                    onValueChange = { gasViewModel.onNotesChanged(it) },
+                                    label = { Text("Notes / Location (e.g. Kitchen Stove)") },
+                                    leadingIcon = {
+                                        Icon(Icons.Outlined.EditNote, contentDescription = null)
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    maxLines = 2
+                                )
+                            }
                         }
                     }
                 }
             }
 
             // ========================================================
-            // 5. YEARLY CYLINDER LOG HISTORY
+            // 4. YEARLY CYLINDER LOG HISTORY
             // ========================================================
             item {
                 Row(
@@ -322,51 +370,60 @@ fun GasCylinderTrackerScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "No past cylinder exchanges recorded yet. Click 'Save & Log' to record your first cylinder.",
+                                text = "No cylinder exchanges logged yet.",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                 }
             } else {
-                items(cylinderHistory) { cylinder ->
+                itemsIndexed(
+                    items = cylinderHistory,
+                    key = { index, cylinder -> "${cylinder.id}_$index" }
+                ) { _, cylinder ->
                     CylinderHistoryItemCard(
                         cylinder = cylinder,
-                        isActive = cylinder.id == activeCylinder.id,
-                        onSelect = { gasViewModel.loadCylinderForEditing(cylinder) },
-                        onDelete = { gasViewModel.deleteCylinder(cylinder.id) }
+                        isCurrentActive = cylinder.id == activeCylinder.id,
+                        isFocusedForEditing = cylinder.id == editingCylinder.id,
+                        onSelectForEditing = { gasViewModel.loadCylinderForEditing(it) },
+                        onDelete = {
+                            val deletedKg = cylinder.sizeKg
+                            gasViewModel.deleteCylinder(cylinder.id)
+                            coroutineScope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "Deleted cylinder log (${deletedKg} kg)!",
+                                    actionLabel = "UNDO",
+                                    duration = SnackbarDuration.Short
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    gasViewModel.undoLastOperation()
+                                }
+                            }
+                        }
                     )
                 }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
 
-    // Material 3 Date Picker Dialog for Bought Date
+    // Modal Date Pickers
     if (showBoughtDatePicker) {
-        Material3DatePickerModal(
+        SimpleDatePickerDialog(
             initialDate = editingCylinder.boughtDate,
-            title = "Select Bought Date",
-            onDateSelected = { selectedDate ->
-                gasViewModel.onBoughtDateSelected(selectedDate)
+            onDateSelected = { date ->
+                gasViewModel.onBoughtDateSelected(date)
                 showBoughtDatePicker = false
             },
             onDismiss = { showBoughtDatePicker = false }
         )
     }
 
-    // Material 3 Date Picker Dialog for Usage Start Date
     if (showUsageDatePicker) {
-        Material3DatePickerModal(
+        SimpleDatePickerDialog(
             initialDate = editingCylinder.usageStartDate,
-            title = "Select Usage Start Date",
-            onDateSelected = { selectedDate ->
-                gasViewModel.onUsageStartDateSelected(selectedDate)
+            onDateSelected = { date ->
+                gasViewModel.onUsageStartDateSelected(date)
                 showUsageDatePicker = false
             },
             onDismiss = { showUsageDatePicker = false }
@@ -375,224 +432,295 @@ fun GasCylinderTrackerScreen(
 }
 
 /**
- * Modern Combined Energy & Utility Overview Card.
- * Displays both Electricity (kWh) and Gas (kg) tracked throughout the year.
+ * Hero Visual Preview Card displaying a dynamically sized 3D-styled Cylinder carousel
+ * with page peeking, pager indicator dots, and new cylinder indicator.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun YearlyUsageOverviewCard(
-    currentYear: Int,
-    totalGasKg: Int,
-    exchangesCount: Int,
-    totalElectricityKwh: Double,
-    electricityReadingsCount: Int
+private fun CylinderHeroVisualCard(
+    savedCylinders: List<GasCylinder>,
+    focusedCylinder: GasCylinder,
+    isSavedCylinder: Boolean,
+    onSelectCylinder: (GasCylinder) -> Unit,
+    onAddNewCylinder: () -> Unit,
+    onTapCycleColor: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    val totalPages = savedCylinders.size + 1
+    val pagerState = rememberPagerState(initialPage = 0) { totalPages }
+
+    // Dynamic 3D height based on capacity size (4kg = 200dp, 9kg = 235dp, 14kg = 270dp, 48kg = 310dp)
+    val target3DHeight: Dp = when (focusedCylinder.sizeKg) {
+        4 -> 200.dp
+        9 -> 235.dp
+        14 -> 270.dp
+        48 -> 310.dp
+        else -> 235.dp
+    }
+    val animated3DHeight by animateDpAsState(
+        targetValue = target3DHeight,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "hero3DHeight"
+    )
+
+    // Synchronize carousel page when focusedCylinder changes externally
+    LaunchedEffect(focusedCylinder.id, savedCylinders) {
+        val targetPage = if (savedCylinders.none { it.id == focusedCylinder.id }) {
+            0
+        } else {
+            savedCylinders.indexOfFirst { it.id == focusedCylinder.id } + 1
+        }
+        if (targetPage in 0 until totalPages && pagerState.currentPage != targetPage) {
+            pagerState.animateScrollToPage(targetPage)
+        }
+    }
+
+    // Synchronize focused cylinder when user swipes the hero carousel
+    LaunchedEffect(pagerState.currentPage) {
+        if (pagerState.currentPage == 0) {
+            if (savedCylinders.any { it.id == focusedCylinder.id }) {
+                onAddNewCylinder()
+            }
+        } else {
+            val cylinderIndex = pagerState.currentPage - 1
+            if (cylinderIndex in savedCylinders.indices) {
+                val selected = savedCylinders[cylinderIndex]
+                if (selected.id != focusedCylinder.id) {
+                    onSelectCylinder(selected)
+                }
+            }
+        }
+    }
+
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+            containerColor = MaterialTheme.colorScheme.surface
         ),
-        modifier = Modifier.fillMaxWidth()
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp),
+                .padding(vertical = 18.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            // Header Row
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "📊", fontSize = 18.sp)
-                    Spacer(modifier = Modifier.width(6.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(
+                                when {
+                                    !isSavedCylinder -> Color(0xFF2E7D32)
+                                    focusedCylinder.isActive -> Color(0xFF2E7D32)
+                                    else -> MaterialTheme.colorScheme.outline
+                                }
+                            )
+                    )
                     Text(
-                        text = "Yearly Utility Tracker ($currentYear)",
-                        style = MaterialTheme.typography.titleMedium,
+                        text = when {
+                            !isSavedCylinder -> "NEW • UNUSED LOG"
+                            focusedCylinder.isActive -> "ACTIVE IN SERVICE"
+                            else -> "USED UP / FINISHED"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = when {
+                            !isSavedCylinder -> Color(0xFF2E7D32)
+                            focusedCylinder.isActive -> Color(0xFF2E7D32)
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                     )
                 }
 
                 Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (isSavedCylinder) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer
                 ) {
                     Text(
-                        text = "Annual Stats",
+                        text = if (isSavedCylinder) "Editing Saved ${focusedCylinder.sizeKg} kg" else "+ New Cylinder Template",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
+                        color = if (isSavedCylinder) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
             }
 
+            // Swipeable 3D Visual HorizontalPager with Dynamic Sizing & Page Peeking
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Gas Card
-                Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier.weight(1f),
-                    tonalElevation = 1.dp
-                ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("♨️", fontSize = 14.sp)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "Gas Consumed",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                IconButton(
+                    onClick = {
+                        if (pagerState.currentPage > 0) {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                            }
                         }
-                        Text(
-                            text = "$totalGasKg kg",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "$exchangesCount cylinders logged",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    },
+                    enabled = pagerState.currentPage > 0,
+                    modifier = Modifier
+                        .padding(start = 2.dp)
+                        .size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.NavigateBefore,
+                        contentDescription = "Previous Cylinder",
+                        tint = if (pagerState.currentPage > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                    )
                 }
 
-                // Electricity Card
-                Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    modifier = Modifier.weight(1f),
-                    tonalElevation = 1.dp
-                ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("⚡", fontSize = 14.sp)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "Electricity",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Text(
-                            text = String.format("%.1f", totalElectricityKwh),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "$electricityReadingsCount meter scans",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
+                HorizontalPager(
+                    state = pagerState,
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    pageSpacing = 12.dp,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(animated3DHeight)
+                ) { pageIndex ->
+                    val displayCylinder = if (pageIndex == 0) focusedCylinder else savedCylinders[pageIndex - 1]
+                    val isPlaceholder = pageIndex == 0
 
-/**
- * Hero Card showcasing the custom Propane Gas Cylinder Composable.
- */
-@Composable
-private fun CylinderHeroVisualCard(
-    cylinder: GasCylinder,
-    onTapCycleColor: () -> Unit
-) {
-    Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Header row with active status
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFF2E7D32).copy(alpha = 0.12f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (isPlaceholder) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                        border = BorderStroke(
+                            width = if (pageIndex == pagerState.currentPage) 2.dp else 1.dp,
+                            color = if (pageIndex == pagerState.currentPage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                        ),
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(6.dp)
+                                .fillMaxSize()
+                                .padding(12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            PropaneGasCylinderComposable(
+                                cylinder = displayCylinder,
+                                isPlaceholderNew = isPlaceholder,
+                                onClick = onTapCycleColor,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
+                }
+
+                IconButton(
+                    onClick = {
+                        if (pagerState.currentPage < totalPages - 1) {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                            }
+                        }
+                    },
+                    enabled = pagerState.currentPage < totalPages - 1,
+                    modifier = Modifier
+                        .padding(end = 2.dp)
+                        .size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.NavigateNext,
+                        contentDescription = "Next Cylinder",
+                        tint = if (pagerState.currentPage < totalPages - 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                    )
+                }
+            }
+
+            // Quick Spec Badges
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                item{
+                QuickSpecBadge(label = "Capacity", value = "${focusedCylinder.sizeKg} kg")}
+                item {
+                QuickSpecBadge(label = "Days Active", value = "${focusedCylinder.daysInUse}d")}
+                item{
+                QuickSpecBadge(label = "Est. Left", value = "${focusedCylinder.estimatedRemainingDays}d")
+            }
+            }
+
+            // Pager Dots Indicator Bar (Visited vs Active vs Upcoming)
+            Column(
+                modifier = Modifier.padding(horizontal = 18.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    for (i in 0 until totalPages) {
+                        val isSelected = i == pagerState.currentPage
+                        val isVisited = i < pagerState.currentPage
+
+                        Box(
+                            modifier = Modifier
+                                .height(8.dp)
+                                .width(if (isSelected) 22.dp else 8.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFFFFFFFF))
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = if (cylinder.isActive) "ACTIVE TANK" else "LOGGED BOTTLE",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF2E7D32)
+                                .background(
+                                    when {
+                                        isSelected -> MaterialTheme.colorScheme.primary
+                                        isVisited -> MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                        else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                                    }
+                                )
+                                .clickable {
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(i)
+                                    }
+                                }
                         )
                     }
                 }
 
                 Text(
-                    text = "Tap cylinder to cycle color 🎨",
+                    text = if (pagerState.currentPage == 0) {
+                        "✨ New Unused Cylinder • Tap color swatches below to customize"
+                    } else {
+                        "Visited ${pagerState.currentPage} of $totalPages cylinders • Swipe 3D view"
+                    },
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // RENDER THE PROPANE GAS CYLINDER COMPOSABLE
-            PropaneGasCylinderComposable(
-                cylinder = cylinder,
-                isInteractive = true,
-                onClick = onTapCycleColor
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Specs badge row
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                QuickSpecBadge(label = "Capacity", value = "${cylinder.sizeKg} kg")
-                QuickSpecBadge(label = "In Use", value = "${cylinder.daysInUse} days")
-                QuickSpecBadge(label = "Est. Left", value = "~${cylinder.estimatedRemainingDays} days")
             }
         }
     }
 }
 
 @Composable
-private fun QuickSpecBadge(label: String, value: String) {
+private fun QuickSpecBadge(
+    label: String,
+    value: String
+) {
     Surface(
         shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
@@ -614,17 +742,21 @@ private fun QuickSpecBadge(label: String, value: String) {
 }
 
 /**
- * Cylinder Configuration & Dynamic Color Palette Section.
- * Caters for editing cylinder size (4kg, 9kg, 14kg, 48kg) and choosing cylinder color.
- * Retains tap-to-cycle color functionality.
+ * Cylinder Configuration Section.
+ * Configures focused cylinder status, size capacity (4kg, 9kg, 14kg, 48kg), color palette,
+ * and includes the primary Save / Update button.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DynamicColorPaletteSection(
     cylinder: GasCylinder,
+    isSavedCylinder: Boolean,
     colors: List<Color>,
     onSizeSelected: (Int) -> Unit,
+    onStatusSelected: (Boolean) -> Unit,
     onColorSelected: (Color) -> Unit,
     onTapCycleColor: () -> Unit,
+    onSaveCylinder: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -641,7 +773,7 @@ private fun DynamicColorPaletteSection(
                 .padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header with title and Cycle Color button
+            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -649,47 +781,72 @@ private fun DynamicColorPaletteSection(
             ) {
                 Column {
                     Text(
-                        text = "Cylinder Configuration",
+                        text = if (isSavedCylinder) "Edit Cylinder Configuration" else "New Cylinder Configuration",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Select size capacity & color theme",
+                        text = "Size capacity, status & color theme",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                Surface(
-                    onClick = onTapCycleColor,
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant
+            }
+
+            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+            // 1. CYLINDER STATUS
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Cylinder Status",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Palette,
-                            contentDescription = "Cycle Color",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Text(
-                            text = "Cycle Color",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    FilterChip(
+                        selected = cylinder.isActive,
+                        onClick = { onStatusSelected(true) },
+                        leadingIcon = {
+                            if (cylinder.isActive) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        },
+                        label = { Text("Active (In Use)") },
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    FilterChip(
+                        selected = !cylinder.isActive,
+                        onClick = { onStatusSelected(false) },
+                        leadingIcon = {
+                            if (!cylinder.isActive) {
+                                Icon(
+                                    imageVector = Icons.Default.History,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        },
+                        label = { Text("Used Up (Finished)") },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
 
             Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-            // 1. CYLINDER SIZE CAPACITY SELECTION
+            // 2. CYLINDER SIZE CAPACITY SELECTION
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "Cylinder Size (Capacity)",
@@ -711,7 +868,7 @@ private fun DynamicColorPaletteSection(
                             border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
                             modifier = Modifier
                                 .weight(1f)
-                                .height(58.dp)
+                                .height(52.dp)
                         ) {
                             Column(
                                 modifier = Modifier
@@ -734,7 +891,7 @@ private fun DynamicColorPaletteSection(
 
             Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-            // 2. DYNAMIC COLOR SWATCHES PALETTE
+            // 3. DYNAMIC COLOR SWATCHES PALETTE
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -748,7 +905,7 @@ private fun DynamicColorPaletteSection(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Tap cylinder above or swatch below",
+                        text = "Tap swatch below to recolor",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -763,7 +920,7 @@ private fun DynamicColorPaletteSection(
                         val isSelected = color == cylinder.color
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(38.dp)
                                 .clip(CircleShape)
                                 .background(color)
                                 .clickable { onColorSelected(color) }
@@ -796,6 +953,31 @@ private fun DynamicColorPaletteSection(
                     }
                 }
             }
+
+            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+            // 4. PRIMARY SAVE / UPDATE BUTTON
+            Button(
+                onClick = onSaveCylinder,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Icon(
+                    imageVector = if (isSavedCylinder) Icons.Default.Save else Icons.Default.AddCircle,
+                    contentDescription = null
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (isSavedCylinder) "Update Focused ${cylinder.sizeKg} kg Cylinder" else "Save & Log New ${cylinder.sizeKg} kg Cylinder",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -822,168 +1004,182 @@ private fun DatePickerDisplayCard(
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(emoji, fontSize = 13.sp)
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
+            Text(
+                text = "$emoji $label",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Text(
                 text = date.toString(),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-
-            Text(
-                text = "Tap to change 📅",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
-                fontSize = 10.sp
-            )
         }
     }
 }
 
 /**
- * History item card representing a past logged gas cylinder.
+ * Card representing an individual logged cylinder in the history log list.
  */
 @Composable
 private fun CylinderHistoryItemCard(
     cylinder: GasCylinder,
-    isActive: Boolean,
-    onSelect: () -> Unit,
+    isCurrentActive: Boolean,
+    isFocusedForEditing: Boolean,
+    onSelectForEditing: (GasCylinder) -> Unit,
     onDelete: () -> Unit
 ) {
-    Card(
+    Surface(
+        onClick = { onSelectForEditing(cylinder) },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onSelect() }
+        color = if (isFocusedForEditing) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surface,
+        border = if (isFocusedForEditing) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+        tonalElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Color tag dot
+            // Color Circle Preview
             Box(
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(36.dp)
                     .clip(CircleShape)
                     .background(cylinder.color)
-                    .border(1.dp, Color.Black.copy(alpha = 0.1f), CircleShape)
-            )
+                    .border(1.dp, Color.Black.copy(alpha = 0.15f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "${cylinder.sizeKg}k",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
 
-            // Info stack
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            // Cylinder Details
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     Text(
-                        text = "${cylinder.sizeKg} kg Propane Cylinder",
+                        text = "${cylinder.sizeKg} kg Cylinder",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
-                    if (isActive) {
-                        Spacer(modifier = Modifier.width(6.dp))
+
+                    if (isCurrentActive) {
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = Color(0xFF2E7D32).copy(alpha = 0.15f)
+                            shape = RoundedCornerShape(4.dp),
+                            color = Color(0xFFE8F5E9)
                         ) {
                             Text(
-                                text = "Active",
-                                fontSize = 9.sp,
+                                text = "ACTIVE",
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF2E7D32),
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                            )
+                        }
+                    } else {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant
+                        ) {
+                            Text(
+                                text = "FINISHED",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
                             )
                         }
                     }
                 }
 
                 Text(
-                    text = "Bought: ${cylinder.boughtDate} • In use since: ${cylinder.usageStartDate}",
+                    text = "Started: ${cylinder.usageStartDate} • ${cylinder.daysInUse}d in service",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 if (cylinder.notes.isNotBlank()) {
                     Text(
                         text = cylinder.notes,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
             }
 
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Delete,
-                    contentDescription = "Delete entry",
-                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                    modifier = Modifier.size(18.dp)
-                )
+            // Action Buttons
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                IconButton(onClick = { onSelectForEditing(cylinder) }) {
+                    Icon(
+                        imageVector = if (isFocusedForEditing) Icons.Default.Edit else Icons.Outlined.Edit,
+                        contentDescription = "Edit Cylinder",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Outlined.Delete,
+                        contentDescription = "Delete Cylinder Log",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }
 }
 
 /**
- * Material 3 Date Picker Modal Dialog with LocalDate bridging.
+ * Simple Material 3 DatePickerDialog wrapper.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun Material3DatePickerModal(
+private fun SimpleDatePickerDialog(
     initialDate: LocalDate,
-    title: String,
     onDateSelected: (LocalDate) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val initialMillis = remember(initialDate) {
-        val javaDate = java.time.LocalDate.of(initialDate.year, initialDate.monthNumber, initialDate.dayOfMonth)
-        javaDate.atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
-    }
-
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialMillis
-    )
+    val datePickerState = rememberDatePickerState()
 
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(
                 onClick = {
-                    datePickerState.selectedDateMillis?.let { millis ->
-                        val javaLocalDate = java.time.Instant.ofEpochMilli(millis)
-                            .atZone(java.time.ZoneOffset.UTC)
-                            .toLocalDate()
-                        val result = LocalDate(
-                            javaLocalDate.year,
-                            javaLocalDate.monthValue,
-                            javaLocalDate.dayOfMonth
-                        )
-                        onDateSelected(result)
-                    } ?: onDismiss()
+                    val selectedMillis = datePickerState.selectedDateMillis
+                    if (selectedMillis != null) {
+                        val instant = Instant.fromEpochMilliseconds(selectedMillis)
+                        val localDate = instant.toLocalDateTime(TimeZone.UTC).date
+                        onDateSelected(localDate)
+                    } else {
+                        onDismiss()
+                    }
                 }
             ) {
-                Text("Select", fontWeight = FontWeight.Bold)
+                Text("Select Date", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -992,15 +1188,6 @@ private fun Material3DatePickerModal(
             }
         }
     ) {
-        DatePicker(
-            state = datePickerState,
-            title = {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(start = 24.dp, top = 16.dp)
-                )
-            }
-        )
+        DatePicker(state = datePickerState)
     }
 }

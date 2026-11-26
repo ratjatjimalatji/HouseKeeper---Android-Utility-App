@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -27,6 +28,7 @@ fun MeterSelectionScreen(
     onNavigateToWater: () -> Unit,
     onNavigateToGas: () -> Unit,
     onNavigateToHistory: () -> Unit,
+    onNavigateToSettings: () -> Unit = {},
     onQuickLog: () -> Unit
 ) {
     Surface(
@@ -51,62 +53,22 @@ fun MeterSelectionScreen(
                         )
                     }
                 },
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
-
-            // Rapid Daily Logging Quick-Action Card
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(18.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.FlashOn,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Text(
-                                text = "Quick Daily Log",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                        Text(
-                            text = "Record readings rapidly without navigating deep menus.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                actions = {
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "OCR & App Settings",
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
-
-                    Button(
-                        onClick = onQuickLog,
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
-                    ) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Log Now", fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
+                },
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
 
             // Electricity Card
             MeterNavigationCard(
                 icon = Icons.Default.FlashOn,
-                color = Color.Yellow,
+                color = Color(0xFFFFA500),
                 header = "Log Electricity Meter",
                 description = "Scan meter camera view or enter kilowatt-hour (kWh) readings.",
                 onClick = onNavigateToElectricity
@@ -120,13 +82,23 @@ fun MeterSelectionScreen(
                 description = "Snap water meter photo & input reading to estimate usage.",
                 onClick = onNavigateToWater
             )
+
             // Gas Cylinder Card
             MeterNavigationCard(
                 icon = Icons.Default.LocalFireDepartment,
                 color = Color.Red,
-                header = "Gas Cylinder & Usage Tracker",
+                header = "Log propane cylinder exchanges",
                 description = "Track propane cylinder exchanges & annual gas usage.",
                 onClick = onNavigateToGas
+            )
+
+            // Reports & Analytics Card
+            MeterNavigationCard(
+                icon = Icons.Default.BarChart,
+                color = Color.Blue,
+                header = "Reports",
+                description = "Find utility patterns and usage reports.",
+                onClick = onNavigateToHistory
             )
         }
     }

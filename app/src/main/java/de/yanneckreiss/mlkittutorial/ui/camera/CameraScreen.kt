@@ -45,6 +45,14 @@ import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import de.yanneckreiss.mlkittutorial.entry.data.TaskViewModel.EntryViewModel
+import de.yanneckreiss.mlkittutorial.entry.data.local.UtilityType
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import kotlinx.coroutines.launch
 import de.yanneckreiss.mlkittutorial.ui.no_permission.NoPermissionScreen
 
 // Color Palette
@@ -59,6 +67,7 @@ private val ScrimColor = Color.Black.copy(alpha = 0.55f)
 @Composable
 fun MainScreen(
     viewModel: EntryViewModel,
+    utilityType: UtilityType = UtilityType.ELECTRICITY,
     onNavigateBack: () -> Unit
 ) {
     val cameraPermissionState: PermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
@@ -67,6 +76,7 @@ fun MainScreen(
         hasPermission = cameraPermissionState.status.isGranted,
         onRequestPermission = cameraPermissionState::launchPermissionRequest,
         viewModel = viewModel,
+        utilityType = utilityType,
         onNavigateBack = onNavigateBack
     )
 }
@@ -77,10 +87,11 @@ private fun MainContent(
     hasPermission: Boolean,
     onRequestPermission: () -> Unit,
     viewModel: EntryViewModel,
+    utilityType: UtilityType,
     onNavigateBack: () -> Unit
 ) {
     if (hasPermission) {
-        CameraScreen(viewModel = viewModel, onNavigateBack = onNavigateBack)
+        CameraScreen(viewModel = viewModel, utilityType = utilityType, onNavigateBack = onNavigateBack)
     } else {
         NoPermissionScreen(onRequestPermission)
     }
@@ -92,6 +103,7 @@ private fun MainContent(
 @Composable
 fun CameraScreen(
     viewModel: EntryViewModel = hiltViewModel(),
+    utilityType: UtilityType = UtilityType.ELECTRICITY,
     onNavigateBack: () -> Unit
 ) {
     val context: Context = LocalContext.current
@@ -99,18 +111,20 @@ fun CameraScreen(
     val cameraController: LifecycleCameraController = remember { LifecycleCameraController(context) }
     var detectedText: String by remember { mutableStateOf("Scanning meter reading..") }
 
-    // Regex to match kWh values (e.g., "1234.5 kWh" or "1234kWh")
-    val kwhRegex = remember { Regex("""(\d+(?:\.\d+)?)\s*[kK][wW][hH]""") }
-
-    val extractedKwhValue = remember(detectedText) {
-        kwhRegex.find(detectedText)?.groupValues?.get(1) ?: ""
+    val extractedValue = remember(detectedText, utilityType) {
+        MeterReadingParser.extract(detectedText, utilityType)
     }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    var isSaving by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Scan Electricity Meter", fontWeight = FontWeight.SemiBold, color = Color.White) },
+                title = { Text("Scan ${utilityType.displayName} Meter", fontWeight = FontWeight.SemiBold, color = Color.White) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = PanelColor)
             )
         }
@@ -145,14 +159,34 @@ fun CameraScreen(
                 }
             )
 
-            ReceptiveFieldOverlay()
+            ReceptiveFieldOverlay(hintText = "Position ${utilityType.displayName.lowercase()} numbers inside frame")
 
             BottomPanel(
-                extractedKwhValue = extractedKwhValue,
+                utilityType = utilityType,
+                extractedValue = extractedValue,
                 detectedText = detectedText,
-                onConfirm = { validKwh ->
-                    viewModel.addScannedReading(kwhStr = validKwh)
-                    onNavigateBack()
+                isSaving = isSaving,
+                onConfirm = { reading, isManual ->
+                    isSaving = true
+                    viewModel.addScannedReading(
+                        kwhStr = reading,
+                        description = if (isManual) "${utilityType.displayName} Manual Entry" else null,
+                        utilityType = utilityType
+                    )
+                    coroutineScope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = "Logged ${utilityType.displayName} reading ($reading ${utilityType.defaultUnit})!",
+                            actionLabel = "UNDO",
+                            duration = SnackbarDuration.Short
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            // Stay on the screen so the reading can be scanned or typed again
+                            viewModel.undoLastAction()
+                            isSaving = false
+                        } else {
+                            onNavigateBack()
+                        }
+                    }
                 },
                 onCancel = onNavigateBack
             )
@@ -162,12 +196,20 @@ fun CameraScreen(
 
 @Composable
 private fun BottomPanel(
-    extractedKwhValue: String,
+    utilityType: UtilityType,
+    extractedValue: String,
     detectedText: String,
-    onConfirm: (String) -> Unit,
+    isSaving: Boolean,
+    onConfirm: (reading: String, isManual: Boolean) -> Unit,
     onCancel: () -> Unit
 ) {
-    val isReadyToConfirm = extractedKwhValue.isNotBlank() && extractedKwhValue.toDoubleOrNull() != null
+    var isManualEntry by rememberSaveable { mutableStateOf(false) }
+    var manualReading by rememberSaveable { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
+
+    val manualValue = manualReading.trim().replace(',', '.')
+    val readingToSave = if (isManualEntry) manualValue else extractedValue
+    val isReadyToConfirm = !isSaving && readingToSave.toDoubleOrNull()?.let { it > 0.0 } == true
 
     Column(
         modifier = Modifier
@@ -175,28 +217,73 @@ private fun BottomPanel(
             .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             .background(PanelColor)
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 24.dp)
-        ,
+            .imePadding()
+            .padding(horizontal = 20.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Extracted kWh result feedback
-        Text(
-            text = if (isReadyToConfirm) "⚡ Detected kWh: $extractedKwhValue" else "Align meter in frame...",
-            style = TextStyle(
-                color = if (isReadyToConfirm) AccentGreen else Color.Yellow,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
+        if (isManualEntry) {
+            OutlinedTextField(
+                value = manualReading,
+                onValueChange = { input ->
+                    if (input.isEmpty() || input.matches(Regex("""\d*[.,]?\d*"""))) manualReading = input
+                },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                label = { Text("${utilityType.displayName} reading") },
+                suffix = { Text(utilityType.defaultUnit, color = PanelMuted) },
+                isError = manualReading.isNotEmpty() && manualValue.toDoubleOrNull() == null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {
+                    focusManager.clearFocus()
+                    if (isReadyToConfirm) onConfirm(readingToSave, true)
+                }),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = AccentGreen,
+                    unfocusedBorderColor = Color.White.copy(alpha = 0.35f),
+                    focusedLabelColor = AccentGreen,
+                    unfocusedLabelColor = PanelMuted,
+                    cursorColor = AccentGreen
+                )
             )
-        )
+        } else {
+            // Extracted reading feedback
+            Text(
+                text = if (extractedValue.isNotBlank()) {
+                    "${utilityType.emoji} Detected: $extractedValue ${utilityType.defaultUnit}"
+                } else {
+                    "Align meter in frame..."
+                },
+                style = TextStyle(
+                    color = if (extractedValue.isNotBlank()) AccentGreen else Color.Yellow,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            )
 
-        Text(
-            text = "Raw OCR: $detectedText",
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            style = TextStyle(color = PanelMuted, fontSize = 12.sp)
-        )
+            Text(
+                text = "Raw OCR: $detectedText",
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                style = TextStyle(color = PanelMuted, fontSize = 12.sp)
+            )
+        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        TextButton(
+            onClick = {
+                if (!isManualEntry && manualReading.isEmpty()) manualReading = extractedValue
+                isManualEntry = !isManualEntry
+                if (!isManualEntry) focusManager.clearFocus()
+            },
+            contentPadding = PaddingValues(0.dp)
+        ) {
+            Text(
+                text = if (isManualEntry) "Scan with camera instead" else "Can't scan? Type the reading",
+                color = AccentGreen,
+                fontWeight = FontWeight.Medium
+            )
+        }
 
         // Action Buttons
         Row(
@@ -204,7 +291,10 @@ private fun BottomPanel(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Button(
-                onClick = { if (isReadyToConfirm) onConfirm(extractedKwhValue) },
+                onClick = {
+                    focusManager.clearFocus()
+                    if (isReadyToConfirm) onConfirm(readingToSave, isManualEntry)
+                },
                 enabled = isReadyToConfirm,
                 modifier = Modifier
                     .weight(1f)
@@ -234,7 +324,10 @@ private fun BottomPanel(
 }
 
 @Composable
-fun ReceptiveFieldOverlay(modifier: Modifier = Modifier) {
+fun ReceptiveFieldOverlay(
+    modifier: Modifier = Modifier,
+    hintText: String = "Position electricity numbers inside frame"
+) {
     val textMeasurer = rememberTextMeasurer()
     Canvas(
         modifier = modifier
@@ -263,7 +356,7 @@ fun ReceptiveFieldOverlay(modifier: Modifier = Modifier) {
 
         // Hint text
         val hint = textMeasurer.measure(
-            text = "Position electricity numbers inside frame",
+            text = hintText,
             style = TextStyle(color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
         )
         drawText(

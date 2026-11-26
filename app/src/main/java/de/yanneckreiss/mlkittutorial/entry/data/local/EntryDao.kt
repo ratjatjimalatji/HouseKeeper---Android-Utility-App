@@ -23,6 +23,9 @@ interface EntryDao {
     suspend fun insertAll(vararg entry: Entry)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSingle(entry: Entry): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertList(entries: List<Entry>)
 
     @Delete

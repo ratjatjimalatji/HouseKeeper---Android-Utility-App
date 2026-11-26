@@ -15,6 +15,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -73,7 +74,16 @@ class GasCylinderRepository @Inject constructor(
             try {
                 val type = object : TypeToken<List<GasCylinderDto>>() {}.type
                 val dtoList: List<GasCylinderDto> = gson.fromJson(json, type)
-                return dtoList.map { it.toDomain() }
+                val domainList = dtoList.map { it.toDomain() }
+                val seenIds = mutableSetOf<String>()
+                return domainList.map { cylinder ->
+                    if (seenIds.contains(cylinder.id)) {
+                        cylinder.copy(id = UUID.randomUUID().toString())
+                    } else {
+                        seenIds.add(cylinder.id)
+                        cylinder
+                    }
+                }
             } catch (e: Exception) {
                 // fallback to empty list
             }
@@ -103,29 +113,57 @@ class GasCylinderRepository @Inject constructor(
         } else {
             currentList.add(0, cylinder)
         }
-        _cylinderHistory.value = currentList
-        saveHistoryToPrefs(currentList)
+        val uniqueHistory = currentList.distinctBy { it.id }
+        _cylinderHistory.value = uniqueHistory
+        saveHistoryToPrefs(uniqueHistory)
     }
 
     fun logNewExchange(newCylinder: GasCylinder) {
-        // Mark previous active cylinder as inactive
-        val currentActive = _activeCylinder.value.copy(isActive = false)
-        val history = _cylinderHistory.value.toMutableList()
+        val currentActive = _activeCylinder.value
+        val archivedActive = currentActive.copy(isActive = false)
 
-        val activeIdx = history.indexOfFirst { it.id == currentActive.id }
-        if (activeIdx >= 0) {
-            history[activeIdx] = currentActive
+        val finalNewCylinder = if (newCylinder.id == archivedActive.id) {
+            newCylinder.copy(id = UUID.randomUUID().toString(), isActive = true)
         } else {
-            history.add(0, currentActive)
+            newCylinder.copy(isActive = true)
         }
 
-        // Add new cylinder
-        history.add(0, newCylinder.copy(isActive = true))
-        _cylinderHistory.value = history
-        saveHistoryToPrefs(history)
+        val history = _cylinderHistory.value.toMutableList()
 
-        _activeCylinder.value = newCylinder.copy(isActive = true)
-        saveActiveCylinderToPrefs(newCylinder.copy(isActive = true))
+        val activeIdx = history.indexOfFirst { it.id == archivedActive.id }
+        if (activeIdx >= 0) {
+            history[activeIdx] = archivedActive
+        } else {
+            history.add(0, archivedActive)
+        }
+
+        val newIdx = history.indexOfFirst { it.id == finalNewCylinder.id }
+        if (newIdx >= 0) {
+            history[newIdx] = finalNewCylinder
+        } else {
+            history.add(0, finalNewCylinder)
+        }
+
+        val uniqueHistory = history.distinctBy { it.id }
+        _cylinderHistory.value = uniqueHistory
+        saveHistoryToPrefs(uniqueHistory)
+
+        _activeCylinder.value = finalNewCylinder
+        saveActiveCylinderToPrefs(finalNewCylinder)
+    }
+
+    fun logFinishedCylinder(finishedCylinder: GasCylinder) {
+        val history = _cylinderHistory.value.toMutableList()
+        val existingIdx = history.indexOfFirst { it.id == finishedCylinder.id }
+        val entryToSave = finishedCylinder.copy(isActive = false)
+        if (existingIdx >= 0) {
+            history[existingIdx] = entryToSave
+        } else {
+            history.add(0, entryToSave)
+        }
+        val uniqueHistory = history.distinctBy { it.id }
+        _cylinderHistory.value = uniqueHistory
+        saveHistoryToPrefs(uniqueHistory)
     }
 
     fun deleteCylinder(cylinderId: String) {
@@ -138,6 +176,17 @@ class GasCylinderRepository @Inject constructor(
             _activeCylinder.value = nextActive
             saveActiveCylinderToPrefs(nextActive)
         }
+    }
+
+    /**
+     * Restores a previously captured state snapshot for undo functionality.
+     */
+    fun restoreStateSnapshot(active: GasCylinder, history: List<GasCylinder>) {
+        _activeCylinder.value = active
+        saveActiveCylinderToPrefs(active)
+
+        _cylinderHistory.value = history
+        saveHistoryToPrefs(history)
     }
 
     private fun GasCylinder.toDto(): GasCylinderDto {

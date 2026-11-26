@@ -43,6 +43,18 @@ class GasCylinderViewModel @Inject constructor(
     val availableColors: List<Color> = DefaultGasCylinderColors
     val sizeOptions: List<Int> = GasCylinderSizeOptions
 
+    // Combined list of all saved cylinders (active cylinder first, followed by history)
+    val allSavedCylinders: StateFlow<List<GasCylinder>> = combine(
+        activeCylinder,
+        cylinderHistory
+    ) { active, history ->
+        (listOf(active) + history).distinctBy { it.id }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     // Yearly statistics computed across all logged cylinders
     val yearlyStats: StateFlow<YearlyUsageStats> = combine(
         activeCylinder,
@@ -67,7 +79,6 @@ class GasCylinderViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            // Keep editing cylinder in sync with active on first load
             _editingCylinder.value = repository.activeCylinder.value
         }
     }
@@ -77,6 +88,13 @@ class GasCylinderViewModel @Inject constructor(
      */
     fun onSizeSelected(sizeKg: Int) {
         _editingCylinder.value = _editingCylinder.value.copy(sizeKg = sizeKg)
+    }
+
+    /**
+     * Updates cylinder active status (true = Currently in use, false = Used up / finished).
+     */
+    fun onIsActiveChanged(isActive: Boolean) {
+        _editingCylinder.value = _editingCylinder.value.copy(isActive = isActive)
     }
 
     /**
@@ -105,7 +123,6 @@ class GasCylinderViewModel @Inject constructor(
      */
     fun onBoughtDateSelected(date: LocalDate) {
         val current = _editingCylinder.value
-        // If usage start date is earlier than new bought date, align it
         val newUsageDate = if (current.usageStartDate < date) date else current.usageStartDate
         _editingCylinder.value = current.copy(
             boughtDate = date,
@@ -130,11 +147,72 @@ class GasCylinderViewModel @Inject constructor(
     }
 
     /**
-     * Saves the current editing cylinder as the active cylinder and logs the exchange.
+     * Cycles to the next saved cylinder in the list.
+     */
+    fun onCycleNextCylinder() {
+        val list = allSavedCylinders.value
+        if (list.isEmpty()) return
+        val currentId = _editingCylinder.value.id
+        val idx = list.indexOfFirst { it.id == currentId }
+        val nextIdx = if (idx >= 0) (idx + 1) % list.size else 0
+        _editingCylinder.value = list[nextIdx]
+    }
+
+    /**
+     * Cycles to the previous saved cylinder in the list.
+     */
+    fun onCyclePreviousCylinder() {
+        val list = allSavedCylinders.value
+        if (list.isEmpty()) return
+        val currentId = _editingCylinder.value.id
+        val idx = list.indexOfFirst { it.id == currentId }
+        val prevIdx = if (idx > 0) idx - 1 else if (idx == 0) list.lastIndex else 0
+        _editingCylinder.value = list[prevIdx]
+    }
+
+    private var lastStateSnapshot: Triple<GasCylinder, List<GasCylinder>, GasCylinder>? = null
+
+    private fun captureSnapshot() {
+        lastStateSnapshot = Triple(
+            repository.activeCylinder.value,
+            repository.cylinderHistory.value,
+            _editingCylinder.value
+        )
+    }
+
+    /**
+     * Reverts the cylinder state (active cylinder, history list, and editing form)
+     * back to what it was before performing the save/update or deletion.
+     */
+    fun undoLastOperation() {
+        val snapshot = lastStateSnapshot ?: return
+        repository.restoreStateSnapshot(snapshot.first, snapshot.second)
+        _editingCylinder.value = snapshot.third
+        lastStateSnapshot = null
+    }
+
+    /**
+     * Saves the current editing cylinder (active or finished/used-up).
      */
     fun saveActiveCylinder() {
+        captureSnapshot()
         val current = _editingCylinder.value
-        repository.logNewExchange(current)
+        val all = allSavedCylinders.value
+        val exists = all.any { it.id == current.id }
+
+        if (exists) {
+            if (current.isActive) {
+                repository.saveActiveCylinder(current)
+            } else {
+                repository.logFinishedCylinder(current)
+            }
+        } else {
+            if (current.isActive) {
+                repository.logNewExchange(current)
+            } else {
+                repository.logFinishedCylinder(current)
+            }
+        }
     }
 
     /**
@@ -161,6 +239,7 @@ class GasCylinderViewModel @Inject constructor(
     }
 
     fun deleteCylinder(id: String) {
+        captureSnapshot()
         repository.deleteCylinder(id)
     }
 }

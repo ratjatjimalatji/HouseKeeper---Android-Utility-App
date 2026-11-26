@@ -250,7 +250,37 @@ class EntryViewModel @Inject constructor(
         // No mock data insertion
     }
 
+    sealed class UndoEntryAction {
+        data class Added(val entryId: Int) : UndoEntryAction()
+        data class Deleted(val entry: Entry) : UndoEntryAction()
+        data class Updated(val previousEntry: Entry) : UndoEntryAction()
+    }
+
+    private var lastUndoAction: UndoEntryAction? = null
+
+    /**
+     * Reverts the database operation (add, update, or delete) for utility readings.
+     */
+    fun undoLastAction() {
+        val action = lastUndoAction ?: return
+        viewModelScope.launch {
+            when (action) {
+                is UndoEntryAction.Added -> {
+                    repository.deleteById(action.entryId)
+                }
+                is UndoEntryAction.Deleted -> {
+                    repository.insertSingle(action.entry)
+                }
+                is UndoEntryAction.Updated -> {
+                    repository.updateEntry(action.previousEntry)
+                }
+            }
+            lastUndoAction = null
+        }
+    }
+
     fun deleteEntry(entry: Entry) {
+        lastUndoAction = UndoEntryAction.Deleted(entry)
         viewModelScope.launch {
             repository.deleteEntry(entry)
         }
@@ -297,7 +327,8 @@ class EntryViewModel @Inject constructor(
                 visibilityKms = 10.0,
                 description = taggedDescription
             )
-            repository.insertEntry(newEntry)
+            val newId = repository.insertSingle(newEntry).toInt()
+            lastUndoAction = UndoEntryAction.Added(newId)
             _showAddDialog.value = false
         }
     }
@@ -332,14 +363,19 @@ class EntryViewModel @Inject constructor(
                 imageUri = photoUri,
                 description = "[Water] [Actual] Water Meter Photo Log"
             )
-            repository.insertEntry(newEntry)
+            val newId = repository.insertSingle(newEntry).toInt()
+            lastUndoAction = UndoEntryAction.Added(newId)
         }
     }
 
     /**
      * Backward-compatible method used by ML Kit Camera Screen
      */
-    fun addScannedReading(kwhStr: String, description: String = "Electricity Meter Scan") {
+    fun addScannedReading(
+        kwhStr: String,
+        description: String? = null,
+        utilityType: UtilityType = UtilityType.ELECTRICITY
+    ) {
         viewModelScope.launch {
             val readingValue = kwhStr.toDoubleOrNull() ?: return@launch
             val now = System.currentTimeMillis()
@@ -347,10 +383,12 @@ class EntryViewModel @Inject constructor(
             val dateStr = sdf.format(Date(now))
             val cal = Calendar.getInstance()
 
-            val taggedDescription = if (description.contains("[Electricity]")) {
-                description
+            val tag = "[${utilityType.displayName}]"
+            val baseDescription = description?.takeIf { it.isNotBlank() } ?: "${utilityType.displayName} Meter Scan"
+            val taggedDescription = if (baseDescription.contains(tag)) {
+                baseDescription
             } else {
-                "[Electricity] [Actual] $description"
+                "$tag [Actual] $baseDescription"
             }
 
             val newEntry = Entry(
@@ -370,7 +408,8 @@ class EntryViewModel @Inject constructor(
                 visibilityKms = 10.0,
                 description = taggedDescription
             )
-            repository.insertEntry(newEntry)
+            val newId = repository.insertSingle(newEntry).toInt()
+            lastUndoAction = UndoEntryAction.Added(newId)
         }
     }
 
