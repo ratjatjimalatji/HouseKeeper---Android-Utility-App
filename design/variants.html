@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HouseKeeper Design Variants</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=swap" rel="stylesheet">
+<style>
+:root{--page:#E7E7EC;--ink:#1B1B21;--muted:#5D5E6B;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--page);color:var(--ink);font-family:Roboto,system-ui,sans-serif;padding:32px 16px 64px}
+.ms{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;font-size:22px;line-height:1;display:inline-block;vertical-align:middle;-webkit-font-feature-settings:'liga';font-feature-settings:'liga'}
+.fill{font-variation-settings:'FILL' 1}
+
+/* ---------- page chrome ---------- */
+.intro{max-width:1560px;margin:0 auto 24px}
+.intro h1{font-size:28px;font-weight:700}
+.intro p{color:var(--muted);margin-top:6px;max-width:760px;line-height:1.5}
+.tabs{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap}
+.tab{border:1px solid #c5c6d0;background:#fff;border-radius:20px;padding:10px 18px;font:500 14px Roboto;cursor:pointer;color:var(--ink)}
+.tab[aria-selected=true]{background:#1B1B21;color:#fff;border-color:#1B1B21}
+.variant{display:none;max-width:1560px;margin:0 auto}
+.variant.on{display:block}
+.vhead{display:grid;grid-template-columns:1fr 1fr;gap:24px;background:#fff;border-radius:16px;padding:20px 24px;margin-bottom:28px}
+.vhead h2{font-size:20px}
+.vhead .tag{font-size:13px;color:var(--muted);margin-top:4px}
+.vhead ul{padding-left:18px;color:#33343d;font-size:14px;line-height:1.6}
+.vhead h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.swatches{display:flex;gap:6px;margin-top:12px}
+.swatches i{width:28px;height:28px;border-radius:8px;border:1px solid rgba(0,0,0,.1)}
+@media(max-width:800px){.vhead{grid-template-columns:1fr}}
+.row{display:flex;gap:32px;flex-wrap:wrap;justify-content:center}
+.cell{display:flex;flex-direction:column;align-items:center;gap:12px}
+.cap{font:500 13px Roboto;color:var(--muted)}
+
+/* ---------- phone frame ---------- */
+.phone{width:360px;height:780px;border-radius:36px;border:9px solid #111;background:#111;overflow:hidden;position:relative;display:flex;flex-direction:column;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.sb{height:30px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font:500 13px Roboto}
+.sb .ms{font-size:16px}
+.scr{flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.body{flex:1;overflow:hidden;padding:0 16px}
+.gest{height:18px;flex:none;display:flex;align-items:center;justify-content:center}
+.gest i{width:108px;height:4px;border-radius:2px;background:currentColor;opacity:.5}
+.phone .scr.cam{background:#1c1f1d;position:relative}
+
+/* ===================================================== */
+/* VARIANT A — Material You, evolved from today's app     */
+/* ===================================================== */
+.A{--pri:#4A5A8C;--onpri:#fff;--pc:#DCE1FF;--onpc:#14204A;--bg:#FBF8FF;--sc:#EFEDF4;--sch:#E7E6EE;--on:#1B1B21;--onv:#45464F;--ol:#C5C6D0;--el:#C77F00;--elc:#FFE7B8;--wa:#00849E;--wac:#C7F0F8;--ga:#C8371F;--gac:#FFDAD3;--ok:#2D6A3E;--okc:#CFEED6}
+.A .phone{color:var(--on)}
+.A .sb,.A .scr{background:var(--bg)}
+.A .gest{background:var(--bg);color:var(--on)}
+.A .top{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 6px}
+.A .hh{display:flex;align-items:center;gap:6px;font:500 18px Roboto;padding:6px 10px 6px 4px;border-radius:12px}
+.A .hh small{display:block;font:400 12px Roboto;color:var(--onv)}
+.A .ib{width:40px;height:40px;border-radius:20px;display:grid;place-items:center;color:var(--onv);position:relative}
+.A .dot{position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:4px;background:var(--ga)}
+.A .alert{background:var(--elc);border-radius:20px;padding:14px 16px;margin-top:6px}
+.A .alert .t{display:flex;gap:8px;align-items:center;font:500 15px Roboto;color:#4A2E00}
+.A .alert p{font-size:12.5px;color:#5C4200;margin:4px 0 10px 30px}
+.A .alert .acts{display:flex;gap:8px;margin-left:30px}
+.A .btn{height:40px;border-radius:20px;padding:0 16px;font:500 14px Roboto;display:inline-flex;align-items:center;gap:6px;border:none}
+.A .btn.f{background:var(--pri);color:#fff}
+.A .btn.t{background:transparent;color:var(--pri);border:1px solid var(--ol)}
+.A .btn.am{background:#7A5200;color:#fff}
+.A .sec{font:500 14px Roboto;margin:18px 0 8px;display:flex;justify-content:space-between;align-items:center}
+.A .sec a{font-size:13px;color:var(--pri)}
+.A .utils{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.A .u{background:var(--sc);border-radius:18px;padding:12px 10px;display:flex;flex-direction:column;gap:6px;min-height:118px}
+.A .u .ic{width:36px;height:36px;border-radius:12px;display:grid;place-items:center}
+.A .u b{font:500 14px Roboto}
+.A .u span:not(.ms){font-size:11.5px;color:var(--onv);line-height:1.3}
+.A .u .sc{margin-top:auto;font:500 12px Roboto;color:var(--pri);display:flex;align-items:center;gap:4px}
+.A .card{background:var(--sc);border-radius:20px;padding:14px 16px}
+.A .qr .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.A .qr .k small{font-size:11.5px;color:var(--onv)}
+.A .qr .k b{display:block;font:500 20px Roboto;margin-top:2px}
+.A .chip{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;border-radius:8px;font:500 11.5px Roboto}
+.A .chip.ok{background:var(--okc);color:var(--ok)}
+.A .chip.up{background:var(--gac);color:#8C1D0A}
+.A .chip.n{background:var(--sch);color:var(--onv)}
+.A .tip{display:flex;gap:10px;margin-top:10px;background:#fff;border-radius:14px;padding:10px 12px;font-size:12.5px;line-height:1.4}
+.A .tip .ms{color:var(--pri)}
+.A .nav{height:72px;flex:none;background:var(--sc);display:grid;grid-template-columns:repeat(4,1fr);align-items:center}
+.A .nav div{display:flex;flex-direction:column;align-items:center;gap:4px;font:500 11.5px Roboto;color:var(--onv)}
+.A .nav .p{width:56px;height:30px;border-radius:15px;display:grid;place-items:center}
+.A .nav .on .p{background:var(--pc);color:var(--onpc)}
+.A .nav .on{color:var(--on)}
+/* scanner */
+.A .camtop{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:10px 8px;color:#fff;z-index:2}
+.A .camtop .t{text-align:center;font:500 15px Roboto}
+.A .camtop small{display:block;font:400 12px Roboto;opacity:.8}
+.meterbox{position:absolute;left:50%;top:210px;transform:translateX(-50%);width:250px;height:120px;border-radius:10px;background:#2b302c;display:grid;place-items:center;box-shadow:inset 0 0 0 3px #3a403b}
+.lcd{background:#9fae8a;color:#1d2419;font:500 34px 'Roboto Mono';letter-spacing:3px;padding:8px 12px;border-radius:4px}
+.lcd small{font-size:13px;letter-spacing:0;margin-left:4px}
+.A .frame{position:absolute;left:50%;top:190px;transform:translateX(-50%);width:290px;height:160px;border:2.5px solid var(--elc);border-radius:16px}
+.A .hint{position:absolute;top:372px;width:100%;text-align:center;color:#fff;font-size:13px;opacity:.85}
+.A .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-radius:28px 28px 0 0;padding:10px 20px 18px}
+.A .grab{width:32px;height:4px;border-radius:2px;background:var(--ol);margin:0 auto 14px}
+.A .det{font:400 13px Roboto;color:var(--onv)}
+.A .val{font:500 36px Roboto;margin:2px 0 6px}
+.A .val small{font-size:16px;color:var(--onv)}
+.A .chk{display:flex;gap:8px;align-items:flex-start;background:var(--okc);color:var(--ok);border-radius:12px;padding:10px 12px;font-size:12.5px;line-height:1.4;margin-bottom:14px}
+.A .two{display:flex;gap:10px}
+.A .two .btn{flex:1;justify-content:center;height:48px;border-radius:24px}
+/* report */
+.A .h1{font:400 24px Roboto;padding:12px 16px 4px}
+.A .seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--ol);border-radius:20px;overflow:hidden;height:40px;margin-top:8px}
+.A .seg div{display:flex;align-items:center;justify-content:center;gap:4px;font:500 13px Roboto;border-right:1px solid var(--ol)}
+.A .seg div:last-child{border:none}
+.A .seg .on{background:var(--elc);color:#4A2E00}
+.A .months{display:flex;gap:8px;margin-top:10px;white-space:nowrap}
+.A .mc{height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--ol);display:inline-flex;align-items:center;font:500 13px Roboto;color:var(--onv)}
+.A .mc.on{background:var(--pc);border-color:var(--pc);color:var(--onpc)}
+.A .pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.A .pair .card small{font-size:12px;color:var(--onv)}
+.A .pair .card b{display:block;font:500 22px Roboto;margin:4px 0 6px}
+.A .graph{margin-top:8px}
+.A .graph svg{width:100%;height:130px;display:block}
+.A .ax{display:flex;justify-content:space-between;font-size:11px;color:var(--onv)}
+.A .conf{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--onv);margin-top:10px}
+.A .rowb{display:flex;gap:8px;margin-top:12px}
+.A .rowb .btn{flex:1;justify-content:center}
+/* household */
+.A .code{background:var(--pc);border-radius:20px;padding:16px;color:var(--onpc)}
+.A .code small{font-size:12px;opacity:.8}
+.A .code .c{font:500 28px 'Roboto Mono';letter-spacing:2px;margin:4px 0 10px}
+.A .code .acts{display:flex;gap:8px}
+.A .code .btn.f{background:var(--pri)}
+.A .code .btn.t{border-color:#9aa3c7;color:var(--onpc)}
+.A .li{display:flex;align-items:center;gap:12px;padding:10px 0}
+.A .av{width:40px;height:40px;border-radius:20px;display:grid;place-items:center;font:500 15px Roboto;flex:none}
+.A .li .m{flex:1;min-width:0}
+.A .li .m b{font:500 14px Roboto;display:block}
+.A .li .m span{font-size:12.5px;color:var(--onv)}
+.A .req{background:var(--sc);border-radius:16px;padding:4px 12px}
+.A .ra{display:flex;gap:6px}
+.A .ra .btn{height:34px;padding:0 12px;font-size:13px}
+
+/* ===================================================== */
+/* VARIANT B — Meter display: dark, numeric, run-out first */
+/* ===================================================== */
+.B{--bg:#0E1113;--s1:#171B1E;--s2:#20262A;--line:#2C3338;--tx:#E9ECEE;--mu:#8E989F;--el:#FFB547;--wa:#57C7E3;--ga:#FF7A59;--ok:#6FD49A;--acc:#FFB547}
+.B .phone{color:var(--tx)}
+.B .sb,.B .scr,.B .gest{background:var(--bg);color:var(--tx)}
+.B .mono{font-family:'Roboto Mono',monospace}
+.B .top{display:flex;justify-content:space-between;align-items:center;padding:10px 16px}
+.B .hh{font:500 15px Roboto;display:flex;align-items:center;gap:4px}
+.B .hh small{font:400 11px 'Roboto Mono';color:var(--mu);display:block;letter-spacing:.06em}
+.B .ib{width:40px;height:40px;border-radius:12px;background:var(--s1);display:grid;place-items:center;color:var(--mu);position:relative}
+.B .dot{position:absolute;top:9px;right:10px;width:7px;height:7px;border-radius:4px;background:var(--ga)}
+.B .hero{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:4px}
+.B .lbl{font:500 11px 'Roboto Mono';letter-spacing:.1em;color:var(--mu);text-transform:uppercase}
+.B .big{font:500 56px 'Roboto Mono';line-height:1;margin:8px 0 2px;color:var(--el);letter-spacing:-2px}
+.B .big small{font-size:18px;color:var(--tx);letter-spacing:0;margin-left:6px}
+.B .why{font-size:12px;color:var(--mu)}
+.B .bar{display:grid;grid-template-columns:repeat(20,1fr);gap:3px;margin:14px 0 12px}
+.B .bar i{height:14px;border-radius:2px;background:var(--s2)}
+.B .bar i.f{background:var(--el)}
+.B .bar i.w{background:var(--ga)}
+.B .hbtns{display:flex;gap:8px}
+.B .btn{white-space:nowrap;height:44px;border-radius:12px;padding:0 14px;font:500 14px Roboto;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--s2);color:var(--tx);flex:1}
+.B .btn.p{background:var(--acc);color:#1a1200;border-color:var(--acc)}
+.B .list{margin-top:12px;background:var(--s1);border:1px solid var(--line);border-radius:16px}
+.B .r{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.B .r:last-child{border:none}
+.B .r .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--s2)}
+.B .r b{font:500 14px Roboto;display:block}
+.B .r span:not(.ms){font-size:11.5px;color:var(--mu)}
+.B .r .n{text-align:right;font:500 16px 'Roboto Mono'}
+.B .r .n small{display:block;font:400 11px Roboto;color:var(--mu)}
+.B .mini{height:4px;border-radius:2px;background:var(--s2);margin-top:6px;overflow:hidden}
+.B .mini i{display:block;height:100%}
+.B .feed{margin-top:12px;font:400 12px 'Roboto Mono';color:var(--mu);line-height:1.9}
+.B .feed b{color:var(--tx);font-weight:500}
+.B .nav{height:76px;flex:none;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr 84px 1fr 1fr;align-items:center;background:var(--bg)}
+.B .nav div{display:flex;flex-direction:column;align-items:center;gap:3px;font:500 11px Roboto;color:var(--mu)}
+.B .nav .on{color:var(--tx)}
+.B .nav .scan{width:60px;height:60px;border-radius:18px;background:var(--acc);color:#1a1200;display:grid;place-items:center;margin:-22px auto 0;box-shadow:0 0 0 6px var(--bg)}
+.B .nav .scan .ms{font-size:30px}
+/* scanner */
+.B .camtop{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:10px 12px;z-index:2}
+.B .pill{background:rgba(0,0,0,.55);border-radius:12px;padding:8px 12px;font:500 12px 'Roboto Mono';display:flex;gap:6px;align-items:center}
+.B .utilsw{position:absolute;top:62px;left:0;right:0;display:flex;justify-content:center;gap:6px}
+.B .utilsw span{font:500 12px Roboto;padding:6px 12px;border-radius:10px;background:rgba(0,0,0,.5);color:var(--mu)}
+.B .utilsw .on{background:var(--el);color:#1a1200}
+.B .corners{position:absolute;left:50%;top:188px;transform:translateX(-50%);width:290px;height:164px}
+.B .corners i{position:absolute;width:26px;height:26px;border-color:var(--el);border-style:solid}
+.B .corners i:nth-child(1){top:0;left:0;border-width:3px 0 0 3px}
+.B .corners i:nth-child(2){top:0;right:0;border-width:3px 3px 0 0}
+.B .corners i:nth-child(3){bottom:0;left:0;border-width:0 0 3px 3px}
+.B .corners i:nth-child(4){bottom:0;right:0;border-width:0 3px 3px 0}
+.B .panel{position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:16px 16px 18px}
+.B .digits{display:flex;gap:5px;justify-content:center;margin:10px 0 6px}
+.B .digits span{width:38px;height:54px;border-radius:8px;background:var(--s1);border:1px solid var(--line);display:grid;place-items:center;font:500 28px 'Roboto Mono'}
+.B .digits .dp{width:14px;background:none;border:none}
+.B .digits .lo{border-color:var(--el);color:var(--el);position:relative}
+.B .digits .lo:after{content:'?';position:absolute;top:-8px;right:-6px;width:16px;height:16px;border-radius:8px;background:var(--el);color:#1a1200;font:700 11px Roboto;display:grid;place-items:center}
+.B .dnote{text-align:center;font-size:12px;color:var(--mu);margin-bottom:12px}
+.B .delta{display:flex;justify-content:space-between;background:var(--s1);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:400 12px 'Roboto Mono';color:var(--mu);margin-bottom:12px}
+.B .delta b{color:var(--ok);font-weight:500}
+/* report */
+.B .h1{display:flex;justify-content:space-between;align-items:center;padding:10px 16px}
+.B .h1 b{font:500 20px Roboto}
+.B .tabsb{display:flex;gap:4px;background:var(--s1);border-radius:12px;padding:4px;margin-top:2px}
+.B .tabsb span{flex:1;text-align:center;font:500 12.5px Roboto;padding:8px 0;border-radius:9px;color:var(--mu)}
+.B .tabsb .on{background:var(--s2);color:var(--el)}
+.B .grid4{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:12px}
+.B .grid4 div{background:var(--s1);padding:12px}
+.B .grid4 b{display:block;font:500 20px 'Roboto Mono';margin-top:4px}
+.B .grid4 em{font:500 11px 'Roboto Mono';font-style:normal}
+.B .up{color:var(--ga)} .B .dn{color:var(--ok)}
+.B .chart{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:12px;margin-top:10px}
+.B .bars{display:flex;align-items:flex-end;gap:4px;height:110px;margin-top:10px}
+.B .bars i{flex:1;background:#3b4247;border-radius:2px 2px 0 0}
+.B .bars i.hi{background:var(--ga)}
+.B .bars i.pj{background:none;border:1px dashed #5a646b;border-bottom:none}
+.B .ax{display:flex;justify-content:space-between;font:400 10px 'Roboto Mono';color:var(--mu);margin-top:4px}
+.B .anom{display:flex;gap:10px;align-items:flex-start;margin-top:10px;font-size:12px;line-height:1.45;color:var(--mu)}
+.B .anom b{color:var(--tx)}
+/* household */
+.B .codebig{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;grid-template-columns:1fr 88px;gap:12px;align-items:center}
+.B .codebig .c{font:500 26px 'Roboto Mono';color:var(--acc);letter-spacing:1px;margin:6px 0}
+.B .qr{width:88px;height:88px;border-radius:8px;background:
+ conic-gradient(from 90deg at 30% 30%,#E9ECEE 25%,transparent 0) 0 0/22px 22px, #0E1113;border:6px solid #E9ECEE}
+.B .mem{display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+.B .mem:last-child{border:none}
+.B .av{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font:500 14px Roboto;color:#0E1113}
+.B .role{font:500 10.5px 'Roboto Mono';letter-spacing:.06em;color:var(--mu);border:1px solid var(--line);border-radius:6px;padding:3px 6px}
+.B .reqb{border:1px dashed var(--el);border-radius:16px;padding:12px 14px;margin-top:12px}
+.B .reqb .acts{display:flex;gap:8px;margin-top:10px}
+.B .reqb .btn{height:38px}
+
+/* ===================================================== */
+/* VARIANT C — Household notebook: warm, people-first     */
+/* ===================================================== */
+.C{--bg:#F5F0E8;--card:#FFFDF8;--line:#E4DBCD;--ink:#2A251F;--mu:#6E6457;--acc:#2F6B4F;--accc:#DCEBDF;--el:#B86E00;--wa:#1F7A8C;--ga:#B5432B;--warn:#FBE6C4}
+.C .phone{color:var(--ink)}
+.C .sb,.C .scr,.C .gest{background:var(--bg);color:var(--ink)}
+.C .serif{font-family:Fraunces,Georgia,serif}
+.C .top{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 18px 4px}
+.C .greet{font:500 24px Fraunces,Georgia,serif;line-height:1.15}
+.C .sub{font-size:13px;color:var(--mu);margin-top:4px;display:flex;align-items:center;gap:6px}
+.C .avs{display:flex}
+.C .avs i{width:26px;height:26px;border-radius:13px;border:2px solid var(--bg);margin-left:-8px;display:grid;place-items:center;font:500 11px Roboto;font-style:normal;color:#fff}
+.C .avs i:first-child{margin-left:0}
+.C .ib{width:40px;height:40px;border-radius:20px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;position:relative}
+.C .dot{position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:4px;background:var(--ga)}
+.C .body{padding:0 18px}
+.C h4{font:600 16px Fraunces,Georgia,serif;margin:18px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+.C h4 a{font:500 13px Roboto;color:var(--acc)}
+.C .logrow{display:flex;gap:8px;margin-top:14px}
+.C .lg{flex:1;height:64px;border-radius:16px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font:500 13px Roboto}
+.C .lg .ms{font-size:24px}
+.C .tl{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:4px 14px}
+.C .ti{display:grid;grid-template-columns:44px 1fr;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.C .ti:last-child{border:none}
+.C .when{text-align:center;font:500 11px Roboto;color:var(--mu);text-transform:uppercase;letter-spacing:.04em}
+.C .when b{display:block;font:600 20px Fraunces,Georgia,serif;color:var(--ink);letter-spacing:0}
+.C .ti .w{font:500 14px Roboto}
+.C .ti p{font-size:12.5px;color:var(--mu);margin-top:2px;line-height:1.4}
+.C .ti .acts{display:flex;gap:8px;margin-top:8px}
+.C .btn{height:36px;border-radius:18px;padding:0 14px;font:500 13px Roboto;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.C .btn.p{background:var(--acc);color:#fff;border-color:var(--acc)}
+.C .urgent{background:var(--warn);border-radius:10px;margin:0 -6px;padding:12px 6px}
+.C .act{display:flex;gap:10px;align-items:center;padding:7px 0;font-size:13px}
+.C .act .a{width:28px;height:28px;border-radius:14px;display:grid;place-items:center;color:#fff;font:500 11px Roboto;flex:none}
+.C .act > span:last-child{color:var(--mu);margin-left:auto;font-size:12px;white-space:nowrap}
+.C .nav{height:70px;flex:none;display:grid;grid-template-columns:repeat(4,1fr);align-items:center;border-top:1px solid var(--line);background:var(--card)}
+.C .nav div{display:flex;flex-direction:column;align-items:center;gap:3px;font:500 11.5px Roboto;color:var(--mu)}
+.C .nav .on{color:var(--acc)}
+/* scanner */
+.C .camtop{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:10px;color:#fff;z-index:2}
+.C .frame{position:absolute;left:50%;top:170px;transform:translateX(-50%);width:290px;height:160px;border:2px solid #fff;border-radius:22px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
+.C .meterC{top:190px}
+.C .hint{position:absolute;top:120px;width:100%;text-align:center;color:#fff;font:500 18px Fraunces,Georgia,serif}
+.C .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-radius:26px 26px 0 0;padding:18px 20px}
+.C .sheet .found{font-size:13px;color:var(--mu)}
+.C .sheet .v{font:600 40px Fraunces,Georgia,serif;margin:2px 0}
+.C .sheet .v small{font:400 16px Roboto;color:var(--mu)}
+.C .note{background:var(--accc);border-radius:14px;padding:10px 12px;font-size:13px;line-height:1.45;display:flex;gap:8px;margin:8px 0 14px}
+.C .note .ms{color:var(--acc)}
+.C .photo{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mu);margin-bottom:14px}
+.C .sw{width:36px;height:20px;border-radius:10px;background:var(--acc);position:relative}
+.C .sw:after{content:'';position:absolute;right:3px;top:3px;width:14px;height:14px;border-radius:7px;background:#fff}
+.C .full{display:flex;gap:10px}
+.C .full .btn{height:48px;border-radius:24px;flex:1;justify-content:center;font-size:14px}
+/* report */
+.C .story{font:500 21px Fraunces,Georgia,serif;line-height:1.3;margin-top:6px}
+.C .story em{font-style:normal;color:var(--acc)}
+.C .story .hi{color:var(--ga)}
+.C .basis{font-size:12px;color:var(--mu);margin-top:8px;display:flex;gap:6px;align-items:center}
+.C .ut{display:flex;gap:6px;margin-top:14px}
+.C .ut > span{height:32px;padding:0 12px;border-radius:16px;border:1px solid var(--line);display:inline-flex;align-items:center;gap:4px;font:500 12.5px Roboto;background:var(--card)}
+.C .ut > .on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.C .cardc{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-top:12px}
+.C .cardc svg{width:100%;height:110px;display:block}
+.C .legend{display:flex;gap:14px;font-size:11.5px;color:var(--mu);margin-top:6px}
+.C .sug{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-top:10px}
+.C .sug b{font:500 14px Roboto;display:block;margin-bottom:4px}
+.C .sug p{font-size:12.5px;color:var(--mu);line-height:1.45}
+.C .sug .fb{display:flex;gap:6px;margin-top:10px}
+.C .sug .fb span{font:500 11.5px Roboto;white-space:nowrap;padding:6px 9px;border-radius:14px;border:1px solid var(--line)}
+.C .est{font:500 11px Roboto;color:var(--acc);background:var(--accc);border-radius:6px;padding:2px 6px;margin-left:4px}
+/* household */
+.C .houses{display:flex;gap:8px;margin-top:10px}
+.C .house{flex:1;border-radius:16px;padding:12px;border:1px solid var(--line);background:var(--card)}
+.C .house.on{border:2px solid var(--acc)}
+.C .house b{font:600 15px Fraunces,Georgia,serif;display:block}
+.C .house span{font-size:12px;color:var(--mu)}
+.C .invite{background:var(--acc);color:#fff;border-radius:18px;padding:16px;margin-top:12px}
+.C .invite p{font-size:13px;opacity:.9;line-height:1.4}
+.C .invite .c{font:500 24px 'Roboto Mono';letter-spacing:2px;margin:8px 0 12px}
+.C .invite .btn{background:#fff;color:var(--acc);border:none}
+.C .invite .btn.o{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5)}
+.C .mm{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.C .mm:last-child{border:none}
+.C .mm .a{width:38px;height:38px;border-radius:19px;display:grid;place-items:center;color:#fff;font:500 14px Roboto;flex:none}
+.C .mm .t{flex:1}
+.C .mm b{font:500 14px Roboto;display:block}
+.C .mm span:not(.a){font-size:12px;color:var(--mu)}
+.C .mm .r{font-size:12px;color:var(--mu)}
+.C .waiting{background:var(--warn);border-radius:14px;padding:10px 12px;margin-top:10px;font-size:13px;display:flex;gap:10px;align-items:center}
+.C .waiting .btn{height:32px;padding:0 12px;margin-left:auto}
+</style>
+</head>
+<body>
+
+<header class="intro">
+  <h1>HouseKeeper: three design directions</h1>
+  <p>Each direction shows the same four screens so you can compare them directly: Home dashboard, Scanner, Report, and Household. The data is sample data for a fictional household. Use the tabs to switch.</p>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-v="A">A · Evolved Material</button>
+    <button class="tab" role="tab" aria-selected="false" data-v="B">B · Meter Display</button>
+    <button class="tab" role="tab" aria-selected="false" data-v="C">C · Household Notebook</button>
+  </div>
+</header>
+
+<!-- ======================================================= -->
+<section class="variant A on" id="vA">
+  <div class="vhead">
+    <div>
+      <h2>A · Evolved Material</h2>
+      <p class="tag">The safest step: grows the app you already have into the new spec.</p>
+      <div class="swatches"><i style="background:#4A5A8C"></i><i style="background:#DCE1FF"></i><i style="background:#FFE7B8"></i><i style="background:#C7F0F8"></i><i style="background:#FFDAD3"></i><i style="background:#EFEDF4"></i></div>
+    </div>
+    <div>
+      <h3>Idea</h3>
+      <ul>
+        <li>Keeps today's slate-blue Material 3 look, tonal cards and colour-per-utility, so existing screens need restyling, not rebuilding.</li>
+        <li>Home leads with the most urgent alert, then three one-tap scan tiles, then the quick report.</li>
+        <li>Standard M3 navigation bar, segmented buttons and chips. Closest to stock Compose components, so the fastest to build.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="row">
+
+    <!-- A1 Home -->
+    <div class="cell"><div class="phone">
+      <div class="sb"><span>18:42</span><span><span class="ms">signal_cellular_alt</span> <span class="ms">battery_5_bar</span></span></div>
+      <div class="scr">
+        <div class="top">
+          <div class="hh"><span class="ms" style="color:var(--pri)">home</span><div>Pretoria Home <span class="ms" style="font-size:18px">expand_more</span><small>4 members</small></div></div>
+          <div class="ib"><span class="ms">notifications</span><i class="dot"></i></div>
+        </div>
+        <div class="body">
+          <div class="alert">
+            <div class="t"><span class="ms fill" style="color:#C77F00">bolt</span>Electricity runs out in about 3 days</div>
+            <p>Around Thu 29 Nov. 37 kWh left at 12.5 kWh/day (last 7 days).</p>
+            <div class="acts"><span class="btn am">Buy electricity</span><span class="btn t" style="border-color:#C9A766;color:#5C4200">Log top-up</span></div>
+          </div>
+          <div class="sec">Log a reading</div>
+          <div class="utils">
+            <div class="u"><div class="ic" style="background:var(--elc);color:var(--el)"><span class="ms fill">bolt</span></div><b>Electricity</b><span>Naledi · 2 h ago</span><div class="sc"><span class="ms" style="font-size:16px">photo_camera</span>Scan</div></div>
+            <div class="u"><div class="ic" style="background:var(--wac);color:var(--wa)"><span class="ms fill">water_drop</span></div><b>Water</b><span>Sipho · 3 days ago</span><div class="sc"><span class="ms" style="font-size:16px">photo_camera</span>Scan</div></div>
+            <div class="u"><div class="ic" style="background:var(--gac);color:var(--ga)"><span class="ms fill">local_fire_department</span></div><b>Gas</b><span>19 kg · 9 days left</span><div class="sc"><span class="ms" style="font-size:16px">swap_horiz</span>Update</div></div>
+          </div>
+          <div class="sec">November so far <a>Full report</a></div>
+          <div class="card qr">
+            <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip ok"><span class="ms" style="font-size:14px">verified</span>High confidence</span><span class="chip up"><span class="ms" style="font-size:14px">trending_up</span>4% vs Oct</span></div>
+            <div class="kpis">
+              <div class="k"><small>Spent so far</small><b>R 642</b></div>
+              <div class="k"><small>Month-end estimate</small><b>R 1 080</b></div>
+            </div>
+            <div class="tip"><span class="ms">lightbulb</span><div>Weekday use between 6 and 8 a.m. is 40% higher than weekends. A geyser timer could save around R180 a month <i style="color:var(--onv)">(estimate)</i>.</div></div>
+          </div>
+        </div>
+        <div class="nav">
+          <div class="on"><span class="p"><span class="ms fill">home</span></span>Home</div>
+          <div><span class="p"><span class="ms">monitoring</span></span>Reports</div>
+          <div><span class="p"><span class="ms">group</span></span>Household</div>
+          <div><span class="p"><span class="ms">settings</span></span>Settings</div>
+        </div>
+      </div>
+      <div class="gest"><i></i></div>
+    </div><span class="cap">Home dashboard</span></div>
+
+    <!-- A2 Scanner -->
+    <div class="cell"><div class="phone">
+      <div class="sb" style="background:#1c1f1d;color:#fff"><span>18:43</span><span><span class="ms">signal_cellular_alt</span> <span class="ms">battery_5_bar</span></span></div>
+      <div class="scr cam">
+        <div class="camtop"><span class="ms" style="padding:8px">arrow_back</span><div class="t">Electricity<small>Prepaid meter</small></div><span class="ms" style="padding:8px">flashlight_on</span></div>
+        <div class="meterbox"><div class="lcd">03733.4<small>kWh</small></div></div>
+        <div class="frame"></div>
+        <div class="hint">Reading found. Hold steady.</div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="det">Detected reading</div>
+          <div class="val">3 733.4 <small>kWh</small></div>
+          <div class="chk"><span class="ms" style="font-size:18px">check_circle</span><div>Looks right: 11.2 kWh used since yesterday's reading, within your normal range.</div></div>
+          <div class="two"><span class="btn t"><span class="ms" style="font-size:18px">keyboard</span>Type it</span><span class="btn f"><span class="ms" style="font-size:18px">check</span>Save reading</span></div>
+        </div>
+      </div>
+      <div class="gest" style="background:var(--bg)"><i></i></div>
+    </div><span class="cap">Scanner with sense check</span></div>
+
+    <!-- A3 Report -->
+    <div class="cell"><div class="phone">
+      <div class="sb"><span>18:44</span><span><span class="ms">signal_cellular_alt</span> <span class="ms">battery_5_bar</span></span></div>
+      <div class="scr">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-right:8px"><div class="h1">Reports</div><div style="display:flex"><div class="ib"><span class="ms">date_range</span></div><div class="ib"><span class="ms">ios_share</span></div></div></div>
+        <div class="body">
+          <div class="seg"><div class="on"><span class="ms fill" style="font-size:18px">bolt</span>Electricity</div><div>Water</div><div>Gas</div></div>
+          <div class="months"><span class="mc on">Nov 2026</span><span class="mc">Oct 2026</span><span class="mc">Sep 2026</span></div>
+          <div class="pair">
+            <div class="card"><small>Next 7 days</small><b>87.5 kWh</b><span class="chip ok"><span class="ms" style="font-size:14px">south</span>6% vs last week</span></div>
+            <div class="card"><small>Month-end</small><b>386 kWh</b><span class="chip up"><span class="ms" style="font-size:14px">north</span>4% vs Oct</span></div>
+          </div>
+          <div class="card graph" style="margin-top:8px">
+            <div style="display:flex;justify-content:space-between;font-size:12.5px"><b style="font-weight:500">Daily usage</b><span style="color:var(--onv)">Tue 18 · 15.8 kWh</span></div>
+            <svg viewBox="0 0 300 130" preserveAspectRatio="none">
+              <line x1="0" y1="30" x2="300" y2="30" stroke="#d9d9e0"/><line x1="0" y1="70" x2="300" y2="70" stroke="#d9d9e0"/><line x1="0" y1="110" x2="300" y2="110" stroke="#d9d9e0"/>
+              <path d="M0 78 L40 78 L40 70 L95 70 L95 82 L130 82 L130 40 L165 40 L165 72 L220 72 L220 66 L260 66" fill="none" stroke="#C77F00" stroke-width="2" stroke-dasharray="4 3"/>
+              <path d="M260 66 L300 62" fill="none" stroke="#C77F00" stroke-width="2" stroke-dasharray="1 4" opacity=".6"/>
+              <rect x="128" y="20" width="38" height="100" fill="#FFDAD3" opacity=".55"/>
+              <g fill="#fff" stroke="#C77F00" stroke-width="2.5"><circle cx="40" cy="78" r="4.5"/><circle cx="95" cy="70" r="4.5"/><circle cx="130" cy="82" r="4.5"/><circle cx="165" cy="40" r="4.5"/><circle cx="220" cy="72" r="4.5"/><circle cx="260" cy="66" r="4.5"/></g>
+              <line x1="147" y1="0" x2="147" y2="130" stroke="#45464F" stroke-width="1"/>
+            </svg>
+            <div class="ax"><span>1 Nov</span><span>15</span><span>30 Nov</span></div>
+            <div class="conf"><span class="ms" style="font-size:16px;color:#C8371F">warning</span>Spike 17–19 Nov, 28% above normal. Check the geyser.</div>
+          </div>
+          <div class="conf"><span class="ms" style="font-size:16px">info</span>Based on 14 readings this month. Weather: cooler week, +6% expected.</div>
+          <div class="rowb"><span class="btn t"><span class="ms" style="font-size:18px">event</span>Custom period</span><span class="btn t"><span class="ms" style="font-size:18px">history</span>History</span></div>
+        </div>
+        <div class="nav">
+          <div><span class="p"><span class="ms">home</span></span>Home</div>
+          <div class="on"><span class="p"><span class="ms fill">monitoring</span></span>Reports</div>
+          <div><span class="p"><span class="ms">group</span></span>Household</div>
+          <div><span class="p"><span class="ms">settings</span></span>Settings</div>
+        </div>
+      </div>
+      <div class="gest"><i></i></div>
+    </div><span class="cap">Full report</span></div>
+
+    <!-- A4 Household -->
+    <div class="cell"><div class="phone">
+      <div class="sb"><span>18:45</span><span><span class="ms">signal_cellular_alt</span> <span class="ms">battery_5_bar</span></span></div>
+      <div class="scr">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-right:8px"><div class="h1">Household</div><div class="ib"><span class="ms">more_vert</span></div></div>
+        <div class="body">
+          <div class="code">
+            <small>Invite code for Pretoria Home</small>
+            <div class="c">HK-4F7Q2</div>
+            <div class="acts"><span class="btn f"><span class="ms" style="font-size:18px">share</span>Share code</span><span class="btn t"><span class="ms" style="font-size:18px">qr_code_2</span>Show QR</span></div>
+          </div>
+          <div class="sec">Join requests · 1</div>
+          <div class="req"><div class="li"><div class="av" style="background:#E2DFF5;color:#3D3A70">TM</div><div class="m"><b>Thabo M.</b><span>Asked 20 min ago</span></div><div class="ra"><span class="btn t">Decline</span><span class="btn f">Approve</span></div></div></div>
+          <div class="sec">Members · 4 <a>Manage</a></div>
+          <div class="li"><div class="av" style="background:#DCE1FF;color:#14204A">LM</div><div class="m"><b>Lerato (you)</b><span>Owner</span></div></div>
+          <div class="li"><div class="av" style="background:#FFE7B8;color:#4A2E00">NM</div><div class="m"><b>Naledi</b><span>Admin · logged electricity 2 h ago</span></div></div>
+          <div class="li"><div class="av" style="background:#C7F0F8;color:#003641">SM</div><div class="m"><b>Sipho</b><span>Member</span></div></div>
+          <div class="li"><div class="av" style="background:#FFDAD3;color:#5C1406">GM</div><div class="m"><b>Gogo</b><span>Viewer · Polokwane</span></div></div>
+          <div class="sec">Activity <a>See all</a></div>
+          <div style="font-size:13px;color:var(--onv);line-height:1.7">Naledi bought 120 kWh for R350 · yesterday<br>Sipho swapped the 19 kg cylinder · Mon</div>
+        </div>
+        <div class="nav">
+          <div><span class="p"><span class="ms">home</span></span>Home</div>
+          <div><span class="p"><span class="ms">monitoring</span></span>Reports</div>
+          <div class="on"><span class="p"><span class="ms fill">group</span></span>Household</div>
+          <div><span class="p"><span class="ms">settings</span></span>Settings</div>
+        </div>
+      </div>
+      <div class="gest"><i></i></div>
+    </div><span class="cap">Household members</span></div>
+
+  </div>
+</section>
+
+<!-- ======================================================= -->
+<section class="variant B" id="vB">
+  <div class="vhead">
+    <div>
+      <h2>B · Meter Display</h2>
+      <p class="tag">Dark, numbers-first. Feels like the meter itself. Built around "how long until it runs out?"</p>
+      <div class="swatches"><i style="background:#0E1113"></i><i style="background:#171B1E"></i><i style="background:#FFB547"></i><i style="background:#57C7E3"></i><i style="background:#FF7A59"></i><i style="background:#6FD49A"></i></div>
+    </div>
+    <div>
+      <h3>Idea</h3>
+      <ul>
+        <li>Home opens on a single big countdown (days of electricity left) with a segmented "fuel gauge". Run-out is the headline, not a card.</li>
+        <li>A raised Scan button sits in the middle of the nav bar, so logging is one tap from every tab.</li>
+        <li>The scanner shows the reading digit by digit; any digit the OCR isn't sure about is highlighted and can be tapped to fix, instead of retyping the whole number.</li>
+        <li>Monospaced numerals throughout. Dense, good for people who like data; less friendly for older relatives.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="row">
+
+    <!-- B1 Home -->
+    <div class="cell"><div class="phone">
+      <div class="sb"><span>18:42</span><span><span class="ms">signal_cellular_alt</span> <span class="ms">battery_5_bar</span></span></div>
+      <div class="scr">
+        <div class="top">
+          <div class="hh"><div>Pretoria Home <span class="ms" style="font-size:18px;color:var(--mu)">expand_more</span><small>4 MEMBERS · SYNCED</small></div></div>
+          <div class="ib"><span class="ms">notifications</span><i class="dot"></i></div>
+        </div>
+        <div class="body">
+          <div class="hero">
+            <div class="lbl">Electricity left</div>
+            <div class="big">2.9<small>days</small></div>
+            <div class="why">37.0 kWh at 12.5 kWh/day · empty around Thu 29 Nov</div>
+            <div class="bar"><i class="w"></i><i class="w"></i><i class="w"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="hbtns"><span class="btn p"><span class="ms" style="font-size:18px">open_in_new</span>Buy electricity</span><span class="btn"><span class="ms" style="font-size:18px">add</span>Top-up</span></div>
+          </div>
+          <div class="list">
+            <div class="r"><div class="ic" style="color:var(--ga)"><span class="ms fill">local_fire_department</span></div><div><b>Gas · 19 kg</b><span>Swapped Mon by Sipho</span><div class="mini"><i style="width:42%;background:var(--ga)"></i></div></div><div class="n">9 d<small>Order by 2 Dec</small></div></div>
+            <div class="r"><div class="ic" style="color:var(--wa)"><span class="ms fill">water_drop</span></div><div><b>Water</b><span>Last read 3 days ago</span><div class="mini"><i style="width:64%;background:var(--wa)"></i></div></div><div class="n">0.42<small>m³/day</small></div></div>
+            <div class="r"><div class="ic" style="color:var(--ok)"><span class="ms">payments</span></div><div><b>This month</b><span>Month-end est. R 1 080</span></div><div class="n">R642<small style="color:var(--ga)">+4% vs Oct</small></div></div>
+          </div>
+          <div class="feed">
+            <div><b>NALEDI</b> logged 3 733.4 kWh · 2h</div>
+            <div><b>NALEDI</b> top-up +120 kWh R350 · 1d</div>
+          </div>
+        </div>
+        <div class="nav">
+          <div class="on"><span class="ms fill">space_dashboard</span>Home</div>
+          <div><span class="ms">monitoring</span>Reports</div>
+          <div><span class="scan"><span class="ms">document_scanner</span></span></div>
+          <div><span class="ms">group</span>Household</div>
+          <div><span class="ms">settings</span>Settings</div>
+        </div>
+      </div>
+      <div class="gest"><i></i></div>
+    </div><span class="cap">Home: run-out countdown</span></div>
+
+    <!-- B2 Scanner -->
+    <div class="cell"><div class="phone">
+      <div class="sb" style="background:#1c1f1d"><span>18:43</span><span><span class="ms">signal_cellular_alt</span> <span class="ms">battery_5_bar</span></span></div>
+      <div class="scr cam">
+        <div class="camtop"><span class="pill"><span class="ms" style="font-size:18px">close</span></span><span class="pill"><span class="ms" style="font-size:16px;color:var(--ok)">memory</span>7-SEGMENT MODEL</span><span class="pill"><span class="ms" style="font-size:18px">flashlight_on</span></span></div>
+        <div class="utilsw"><span class="on">Electricity</span><span>Water</span></div>
+        <div class="meterbox"><div class="lcd">03733.4<small>kWh</small></div></div>
+        <div class="corners"><i></i><i></i><i></i><i></i></div>
+        <div class="panel">
+          <div class="lbl" style="text-align:center">Reading · kWh</div>
+          <div class="digits"><span>3</span><span>7</span><span class="lo">3</span><span>3</span><span class="dp">.</span><span>4</span></div>
+          <div class="dnote">Not sure about one digit. Tap it to change.</div>
+          <div class="delta"><span>since yesterday</span><b>+11.2 kWh · normal</b></div>
+          <div class="hbtns"><span class="btn"><span class="ms" style="font-size:18px">keyboard</span>Type</span><span class="btn p" style="flex:2"><span class="ms" style="font-size:18px">check</span>Save 3 733.4</span></div>
+        </div>
+      </div>
+      <div class="gest" style="background:var(--bg)"><i></i></div>
+    </div><span class="cap">Scanner: tap a digit to fix it</span></div>
+
+    <!-- B3 Report -->
+    <div class="cell"><div class="phone">
+      <div class="sb"><span>18:44</span><span><span class="ms">signal_cellular_alt</span> <span class="ms">battery_5_bar</span></span></div>
+      <div class="scr">
+        <div class="h1"><b>Reports</b><div style="display:flex;gap:6px"><div class="ib"><span class="ms">date_range</span></div><div class="ib"><span class="ms">ios_share</span></div></div></div>
+        <div class="body">
+          <div class="tabsb"><span class="on">Electricity</span><span>Water</span><span>Gas</span></div>
+          <div class="grid4">
+            <div><span class="lbl">Next 7 days</span><b>87.5<span style="font-size:12px;color:var(--mu)"> kWh</span></b><em class="dn">−6% wk</em></div>
+            <div><span class="lbl">Month-end</span><b>386<span style="font-size:12px;color:var(--mu)"> kWh</span></b><em class="up">+4% Oct</em></div>
+            <div><span class="lbl">Cost to date</span><b>R642</b><em style="color:var(--mu)">R2.89/kWh</em></div>
+            <div><span class="lbl">Confidence</span><b style="color:var(--ok)">High</b><em style="color:var(--mu)">14 readings</em></div>
+          </div>
+          <div class="chart">
+            <div style="display:flex;justify-content:space-between"><span class="lbl">Daily kWh · Nov</span><span class="lbl" style="color:var(--tx)">avg 12.5</span></div>
+            <div class="bars">
+              <i style="height:55%"></i><i style="height:58%"></i><i style="height:52%"></i><i style="height:60%"></i><i style="height:57%"></i><i style="height:62%"></i><i style="height:50%"></i><i style="height:56%"></i><i style="height:59%"></i><i style="height:61%"></i><i style="height:54%"></i><i style="height:58%"></i><i style="height:57%"></i><i style="height:60%"></i><i style="height:55%"></i><i style="height:57%"></i><i class="hi" style="height:88%"></i><i class="hi" style="height:92%"></i><i class="hi" style="height:85%"></i><i style="height:60%"></i><i style="height:58%"></i><i style="height:56%"></i><i style="height:59%"></i><i style="height:57%"></i><i style="height:58%"></i><i class="pj" style="height:60%"></i><i class="pj" style="height:62%"></i><i class="pj" style="height:58%"></i><i class="pj" style="height:60%"></i><i class="pj" style="height:61%"></i>
+            </div>
+            <div class="ax"><span>01</span><span>10</span><span>20</span><span>30</span></div>
+            <div class="anom"><span class="ms" style="color:var(--ga);font-size:20px">warning</span><div><b>Spike 17–19 Nov, +28%.</b> Matches a geyser left on. Cooler weather explains about 6% of it.</div></div>
+          </div>
+          <div class="hbtns" style="margin-top:10px"><span class="btn"><span class="ms" style="font-size:18px">event</span>Custom period</span><span class="btn"><span class="ms" style="font-size:18px">picture_as_pdf</span>Export</span></div>
+        </div>
+        <div class="nav">
+          <div><span class="ms">space_dashboard</span>Home</div>
+          <div class="on"><span class="ms fill">monitoring</span>Reports</div>
+          <div><span class="scan"><span class="ms">document_scanner</span></span></div>
+          <div><span class="ms">group</span>Household</div>
+          <div><span class="ms">settings</span>Settings</div>
+        </div>
+      </div>
+      <div class="gest"><i></i></div>
+    </div><span class="cap">Report: daily bars + anomaly</span></div>
+
+    <!-- B4 Household -->
+    <div class="cell"><div class="phone">
+      <div class="sb"><span>18:45</span><span><span class="ms">signal_cellular_alt</span> <span class="ms">battery_5_bar</span></span></div>
+      <div class="scr">
+        <div class="h1"><b>Household</b><div class="ib"><span class="ms">more_vert</span></div></div>
+        <div class="body">
+          <div class="codebig">
+            <div><span class="lbl">Join code</span><div class="c">HK-4F7Q2</div><span style="font-size:12px;color:var(--mu)">Approval required</span></div>
+            <div class="qr"></div>
+          </div>
+          <div class="hbtns" style="margin-top:8px"><span class="btn p"><span class="ms" style="font-size:18px">share</span>Share</span><span class="btn"><span class="ms" style="font-size:18px">refresh</span>New code</span></div>
+          <div class="reqb">
+            <div style="display:flex;justify-content:space-between"><span class="lbl" style="color:var(--el)">Join request</span><span class="lbl">20 min</span></div>
+            <div style="font:500 15px Roboto;margin-top:6px">Thabo M. wants to join</div>
+            <div class="acts"><span class="btn">Decline</span><span class="btn p">Approve as member</span></div>
+          </div>
+          <div class="list">
+            <div class="mem"><div class="av" style="background:var(--el)">LM</div><div><b style="font:500 14px Roboto">Lerato (you)</b></div><span class="role">OWNER</span></div>
+            <div class="mem"><div class="av" style="background:var(--ok)">NM</div><div><b style="font:500 14px Roboto">Naledi</b></div><span class="role">ADMIN</span></div>
+            <div class="mem"><div class="av" style="background:var(--wa)">SM</div><div><b style="font:500 14px Roboto">Sipho</b></div><span class="role">MEMBER</span></div>
+            <div class="mem"><div class="av" style="background:var(--ga)">GM</div><div><b style="font:500 14px Roboto">Gogo</b></div><span class="role">VIEWER</span></div>
+          </div>
+        </div>
+        <div class="nav">
+          <div><span class="ms">space_dashboard</span>Home</div>
+          <div><span class="ms">monitoring</span>Reports</div>
+          <div><span class="scan"><span class="ms">document_scanner</span></span></div>
+          <div class="on"><span class="ms fill">group</span>Household</div>
+          <div><span class="ms">settings</span>Settings</div>
+        </div>
+      </div>
+      <div class="gest"><i></i></div>
+    </div><span class="cap">Household: code, request, roles</span></div>
+
+  </div>
+</section>
+
+<!-- ======================================================= -->
+<section class="variant C" id="vC">
+  <div class="vhead">
+    <div>
+      <h2>C · Household Notebook</h2>
+      <p class="tag">Warm and people-first. Reads like a shared to-do list for the house, not a dashboard.</p>
+      <div class="swatches"><i style="background:#F5F0E8"></i><i style="background:#FFFDF8"></i><i style="background:#2F6B4F"></i><i style="background:#DCEBDF"></i><i style="background:#FBE6C4"></i><i style="background:#2A251F"></i></div>
+    </div>
+    <div>
+      <h3>Idea</h3>
+      <ul>
+        <li>Home is a "Coming up" timeline: dated things the house needs to do (buy electricity Thursday, order gas next week), each with its action inline.</li>
+        <li>People are visible everywhere: avatars, "Naledi logged this", activity in plain sentences. Best fit for the shared-family goal and remote relatives.</li>
+        <li>Reports open with a one-sentence summary in words, then the graph, then AI suggestions you can rate.</li>
+        <li>Serif headings and a warm palette set it apart from typical utility apps. Moves furthest from today's look.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="row">
+
+    <!-- C1 Home -->
+    <div class="cell"><div class="phone">
+      <div class="sb"><span>18:42</span><span><span class="ms">signal_cellular_alt</span> <span class="ms">battery_5_bar</span></span></div>
+      <div class="scr">
+        <div class="top">
+          <div><div class="greet">Good evening,<br>Lerato</div><div class="sub">Pretoria Home <span class="ms" style="font-size:16px">expand_more</span><span class="avs"><i style="background:#2F6B4F">L</i><i style="background:#B86E00">N</i><i style="background:#1F7A8C">S</i><i style="background:#B5432B">G</i></span></div></div>
+          <div class="ib"><span class="ms">notifications</span><i class="dot"></i></div>
+        </div>
+        <div class="body">
+          <div class="logrow">
+            <div class="lg"><span class="ms fill" style="color:var(--el)">bolt</span>Electricity</div>
+            <div class="lg"><span class="ms fill" style="color:var(--wa)">water_drop</span>Water</div>
+            <div class="lg"><span class="ms fill" style="color:var(--ga)">propane_tank</span>Gas</div>
+          </div>
+          <h4>Coming up</h4>
+          <div class="tl">
+            <div class="ti urgent"><div class="when">Thu<b>29</b></div><div><div class="w">Electricity runs out</div><p>About 37 kWh left. Usually R350 buys enough for 10 days.</p><div class="acts"><span class="btn p">Buy electricity</span><span class="btn">I bought it</span></div></div></div>
+            <div class="ti"><div class="when">Wed<b>5</b></div><div><div class="w">19 kg gas cylinder runs low</div><p>Order by Mon 3 Dec to be safe.</p><div class="acts"><span class="btn"><span class="ms" style="font-size:16px">local_shipping</span>Order gas</span></div></div></div>
+            <div class="ti"><div class="when">Sat<b>1</b></div><div><div class="w">Water reading due</div><p>Last one was Sipho's, 3 days ago.</p></div></div>
+          </div>
+          <h4>In the house <a>All activity</a></h4>
+          <div class="act"><span class="a" style="background:#B86E00">N</span>Naledi logged electricity<span>2 h ago</span></div>
+          <div class="act"><span class="a" style="background:#B86E00">N</span>Naledi bought 120 kWh, R350<span>Yesterday</span></div>
+        </div>
+        <div class="nav">
+          <div class="on"><span class="ms fill">home</span>Home</div>
+          <div><span class="ms">insights</span>Reports</div>
+          <div><span class="ms">diversity_3</span>Household</div>
+          <div><span class="ms">settings</span>Settings</div>
+        </div>
+      </div>
+      <div class="gest"><i></i></div>
+    </div><span class="cap">Home: "Coming up" timeline</span></div>
+
+    <!-- C2 Scanner -->
+    <div class="cell"><div class="phone">
+      <div class="sb" style="background:#1c1f1d;color:#fff"><span>18:43</span><span><span class="ms">signal_cellular_alt</span> <span class="ms">battery_5_bar</span></span></div>
+      <div class="scr cam">
+        <div class="camtop"><span class="ms" style="padding:8px">close</span><span class="ms" style="padding:8px">flashlight_on</span></div>
+        <div class="hint">Point at the electricity meter</div>
+        <div class="meterbox meterC"><div class="lcd">03733.4<small>kWh</small></div></div>
+        <div class="frame"></div>
+        <div class="sheet">
+          <div class="found">We read</div>
+          <div class="v">3 733.4 <small>kWh</small></div>
+          <div class="note"><span class="ms">check_circle</span><div>That's 11.2 kWh since Naledi's reading yesterday, a normal day for your house.</div></div>
+          <div class="photo"><span class="sw"></span>Keep the photo as proof</div>
+          <div class="full"><span class="btn">Type it instead</span><span class="btn p">Save</span></div>
+        </div>
+      </div>
+      <div class="gest" style="background:var(--bg)"><i></i></div>
+    </div><span class="cap">Scanner: plain-language check</span></div>
+
+    <!-- C3 Report -->
+    <div class="cell"><div class="phone">
+      <div class="sb"><span>18:44</span><span><span class="ms">signal_cellular_alt</span> <span class="ms">battery_5_bar</span></span></div>
+      <div class="scr">
+        <div class="top"><div class="greet" style="font-size:22px">November</div><div style="display:flex;gap:8px"><div class="ib"><span class="ms">date_range</span></div><div class="ib"><span class="ms">ios_share</span></div></div></div>
+        <div class="body">
+          <div class="story">You've spent <em>R642</em> on electricity so far. You're on track for <em>R1 080</em>, <span class="hi">a little more than October</span>.</div>
+          <div class="basis"><span class="ms" style="font-size:16px">verified</span>Fairly sure: based on 14 readings this month</div>
+          <div class="ut"><span class="on"><span class="ms fill" style="font-size:16px">bolt</span>Electricity</span><span>Water</span><span>Gas</span></div>
+          <div class="cardc">
+            <svg viewBox="0 0 300 110" preserveAspectRatio="none">
+              <path d="M0 80 C40 76 60 70 100 72 S140 30 160 34 S200 70 230 68 S270 64 300 62" fill="none" stroke="#2A251F" stroke-width="2"/>
+              <path d="M0 86 C60 84 120 82 180 80 S260 76 300 76" fill="none" stroke="#B9AE9C" stroke-width="2" stroke-dasharray="4 4"/>
+              <circle cx="160" cy="34" r="5" fill="#B5432B"/>
+            </svg>
+            <div class="legend"><span>━ November</span><span style="color:#9b8f7c">┅ October</span><span style="color:var(--ga)">● Spike 17–19 Nov</span></div>
+          </div>
+          <h4>Ideas for your house</h4>
+          <div class="sug"><b>Put the geyser on a timer <span class="est">~R180/month</span></b><p>Weekday mornings (6–8 a.m.) use 40% more than weekends. Based on 6 weeks of readings.</p><div class="fb"><span>Helpful</span><span>Not relevant</span><span>Already doing this</span></div></div>
+        </div>
+        <div class="nav">
+          <div><span class="ms">home</span>Home</div>
+          <div class="on"><span class="ms fill">insights</span>Reports</div>
+          <div><span class="ms">diversity_3</span>Household</div>
+          <div><span class="ms">settings</span>Settings</div>
+        </div>
+      </div>
+      <div class="gest"><i></i></div>
+    </div><span class="cap">Report: summary in words</span></div>
+
+    <!-- C4 Household -->
+    <div class="cell"><div class="phone">
+      <div class="sb"><span>18:45</span><span><span class="ms">signal_cellular_alt</span> <span class="ms">battery_5_bar</span></span></div>
+      <div class="scr">
+        <div class="top"><div class="greet" style="font-size:22px">Your households</div></div>
+        <div class="body">
+          <div class="houses">
+            <div class="house on"><b>Pretoria Home</b><span>4 people · all good</span></div>
+            <div class="house"><b>Gogo's place</b><span>Polokwane · gas low</span></div>
+          </div>
+          <div class="waiting"><span class="ms" style="color:var(--el)">person_add</span><div><b style="font-weight:500">Thabo</b> asked to join</div><span class="btn p">Review</span></div>
+          <div class="invite">
+            <p>Invite someone to Pretoria Home. They'll need your approval.</p>
+            <div class="c">HK-4F7Q2</div>
+            <div style="display:flex;gap:8px"><span class="btn"><span class="ms" style="font-size:18px">chat</span>Send on WhatsApp</span><span class="btn o"><span class="ms" style="font-size:18px">qr_code_2</span>QR</span></div>
+          </div>
+          <h4>People</h4>
+          <div class="mm"><span class="a" style="background:#2F6B4F">L</span><div class="t"><b>Lerato (you)</b><span>Owner</span></div></div>
+          <div class="mm"><span class="a" style="background:#B86E00">N</span><div class="t"><b>Naledi</b><span>Admin · logs most often</span></div></div>
+          <div class="mm"><span class="a" style="background:#1F7A8C">S</span><div class="t"><b>Sipho</b><span>Member</span></div></div>
+        </div>
+        <div class="nav">
+          <div><span class="ms">home</span>Home</div>
+          <div><span class="ms">insights</span>Reports</div>
+          <div class="on"><span class="ms fill">diversity_3</span>Household</div>
+          <div><span class="ms">settings</span>Settings</div>
+        </div>
+      </div>
+      <div class="gest"><i></i></div>
+    </div><span class="cap">Households and invites</span></div>
+
+  </div>
+</section>
+
+<script>
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));
+  document.querySelectorAll('.variant').forEach(v=>v.classList.toggle('on',v.id==='v'+t.dataset.v));
+}));
+</script>
+</body>
+</html>
