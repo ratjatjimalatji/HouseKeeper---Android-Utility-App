@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HouseKeeper Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hk.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);color:var(--text);background:#FBFBFC}
+.d-wrap{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.d-side{position:sticky;top:0;height:100vh;overflow:auto;border-right:1px solid var(--line);background:var(--surface);padding:24px 16px}
+.d-brand{display:flex;gap:10px;align-items:center;margin-bottom:24px}
+.d-brand .logo{width:36px;height:36px;border-radius:10px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center}
+.d-brand b{font:500 15px var(--font);display:block}
+.d-brand small{font:400 11px var(--mono);color:var(--text-2)}
+.d-side h6{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin:18px 8px 6px}
+.d-side a{display:block;padding:7px 8px;border-radius:8px;font-size:13.5px;color:var(--text-2);text-decoration:none}
+.d-side a:hover{background:var(--surface-2);color:var(--text)}
+.d-side a.is-cur{background:var(--primary-soft);color:var(--primary-text);font-weight:500}
+.d-main{padding:40px 48px 120px;max-width:1180px}
+.d-hero h1{font:500 34px var(--font);letter-spacing:-.5px}
+.d-hero p{color:var(--text-2);margin-top:8px;max-width:720px;line-height:1.55}
+.d-hero .links{display:flex;gap:8px;margin-top:16px}
+section.d-sec{padding-top:56px}
+.d-sec>h2{font:500 24px var(--font);display:flex;align-items:baseline;gap:10px}
+.d-sec>h2 code{font:400 12px var(--mono);color:var(--text-2)}
+.d-sec>p.lead{color:var(--text-2);margin:6px 0 20px;max-width:760px;line-height:1.55;font-size:14.5px}
+.d-sec h3{font:500 15px var(--font);margin:26px 0 10px}
+.panel{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:20px}
+.states{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px 16px}
+.states.w2{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.states.w3{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.st{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.st>.cap{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--text-2)}
+.st>.cap em{font-style:normal;color:var(--text-3);text-transform:none;letter-spacing:0;font-family:var(--font)}
+.st.full{align-items:stretch}
+.rules{margin-top:12px;padding-left:18px;color:var(--text-2);font-size:13.5px;line-height:1.7}
+.rules b{color:var(--text);font-weight:500}
+.mockw{width:328px}
+/* swatches */
+.sw-group{margin-top:18px}
+.sw-group h4{font:500 13px var(--font);margin-bottom:10px;color:var(--text-2)}
+.sw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.sw{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.sw .chipc{height:72px;display:flex;align-items:flex-end;justify-content:space-between;padding:8px 10px;font:500 12px var(--mono)}
+.sw .meta{padding:10px 12px}
+.sw .meta b{font:500 13px var(--font);display:block}
+.sw .meta code{font:500 12px var(--mono);color:var(--text)}
+.sw .meta .tok{font:400 11px var(--mono);color:var(--text-2);display:block;margin-top:2px}
+.sw .meta p{font-size:12px;color:var(--text-2);margin-top:6px;line-height:1.4}
+.copy{cursor:pointer;border:none;background:none;color:inherit;font:inherit}
+.copy:hover{text-decoration:underline}
+/* type */
+.type-row{display:grid;grid-template-columns:200px 1fr;gap:20px;padding:16px 0;border-bottom:1px solid var(--line);align-items:center}
+.type-row .spec{font:400 12px var(--mono);color:var(--text-2);line-height:1.6}
+.type-row .spec b{font:500 13px var(--font);color:var(--text);display:block}
+.font-card{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.font-card>div{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px}
+.font-card .aa{font-size:56px;line-height:1}
+.font-card p{color:var(--text-2);font-size:13px;margin-top:10px;line-height:1.5}
+/* tokens table */
+table.tk{width:100%;border-collapse:collapse;font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tk th{text-align:left;font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--text-2);padding:10px 12px;background:var(--surface-2)}
+.tk td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:middle}
+.tk code{font:500 12px var(--mono)}
+.phone-mini{width:328px;background:var(--bg);border:1px solid var(--line);border-radius:20px;overflow:hidden;position:relative}
+.ctr{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:99;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+@media(max-width:900px){.d-wrap{grid-template-columns:1fr}.d-side{display:none}.d-main{padding:24px 16px 80px}.font-card{grid-template-columns:1fr}.type-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="d-wrap">
+<nav class="d-side" id="side">
+  <div class="d-brand"><span class="logo"><span class="ms fill">home_iot_device</span></span><div><b>HouseKeeper</b><small>Design System v1.0</small></div></div>
+  <h6>Foundations</h6>
+  <a href="#colour">Colour</a><a href="#type">Typography</a><a href="#shape">Spacing, shape, elevation</a><a href="#icons">Icons</a>
+  <h6>Actions</h6>
+  <a href="#buttons">Buttons</a><a href="#iconbtn">Icon buttons & Scan</a>
+  <h6>Inputs</h6>
+  <a href="#inputs">Text & reading fields</a><a href="#chips">Chips & segmented</a><a href="#switches">Switches & radios</a>
+  <h6>Data display</h6>
+  <a href="#badges">Badges, tags, avatars</a><a href="#cards">Cards & list rows</a><a href="#tiles">Utility tiles</a><a href="#cylinder">Gas cylinder</a><a href="#activity">Activity card</a><a href="#hero">Run-out hero & gauge</a><a href="#digits">OCR digits</a><a href="#charts">Charts & stats</a>
+  <h6>Feedback</h6>
+  <a href="#progress">Loading & skeletons</a><a href="#snack">Snackbars, banners, alerts</a><a href="#overlays">Sheets & dialogs</a><a href="#empty">Empty states</a>
+  <h6>Navigation</h6>
+  <a href="#nav">App bar & nav bar</a>
+  <h6>Prototype</h6>
+  <a href="prototype.html">Open interactive prototype →</a>
+</nav>
+
+<main class="d-main">
+  <header class="d-hero">
+    <span class="t-label">Amber Daylight · Android · Jetpack Compose</span>
+    <h1 style="margin-top:8px">HouseKeeper Design System</h1>
+    <p>Foundations and components for the HouseKeeper Android app. Every component is shown in each state it can be in: default, pressed, focused, disabled, loading, error and empty. The tokens live in <code>hk.css</code>, which the interactive prototype also uses, so this page and the prototype always match. Click any hex value to copy it.</p>
+    <div class="links"><a class="btn btn-primary" href="prototype.html"><span class="ms">smartphone</span>Open prototype</a><a class="btn btn-secondary" href="#buttons"><span class="ms">widgets</span>Jump to components</a></div>
+  </header>
+
+  <!-- ================= COLOUR ================= -->
+  <section class="d-sec" id="colour">
+    <h2>Colour <code>HkColors</code></h2>
+    <p class="lead">Amber is used as a <b>fill</b>, with dark ink on top: buttons, the Scan button, selected states. Amber text on white fails contrast, so text and icons use <b>Amber Text #8F5600</b>. Each utility has its own colour, and status colours are kept separate from utility colours.</p>
+    <div id="swatches"></div>
+    <h3>Contrast checks</h3>
+    <table class="tk" id="contrast"><tr><th>Foreground</th><th>Background</th><th>Sample</th><th>Ratio</th><th>WCAG</th></tr></table>
+  </section>
+
+  <!-- ================= TYPE ================= -->
+  <section class="d-sec" id="type">
+    <h2>Typography <code>HkType</code></h2>
+    <p class="lead">Two families. <b>Roboto</b> for all words. <b>Roboto Mono</b> for anything you read off a meter: readings, units, money, countdowns, plus small uppercase labels. Monospaced digits line up in lists and don't jump while a scan updates.</p>
+    <div class="font-card">
+      <div><div class="aa" style="font-family:var(--font)">Aa</div><div class="t-title" style="margin-top:12px">Roboto</div><p>Weights 400 Regular, 500 Medium. Used for headings, body, buttons and navigation. The Android system default, so no extra download on most devices.</p></div>
+      <div><div class="aa" style="font-family:var(--mono)">0.9</div><div class="t-title" style="margin-top:12px">Roboto Mono</div><p>Weights 400, 500. Used for meter readings, kWh/m³/kg values, rand amounts, run-out countdowns, join codes and LABELS.</p></div>
+    </div>
+    <div id="typescale" style="margin-top:16px"></div>
+  </section>
+
+  <!-- ================= SHAPE ================= -->
+  <section class="d-sec" id="shape">
+    <h2>Spacing, shape, elevation</h2>
+    <p class="lead">A 4 pt grid. Screen side padding is 16. Cards sit 8–12 apart. Use borders before shadows: shadows are only for things floating above the page (the Scan button, sheets, dialogs, snackbars).</p>
+    <div class="states w2">
+      <div class="st full"><span class="cap">Spacing</span><div id="spacing" class="panel" style="display:flex;flex-direction:column;gap:8px"></div></div>
+      <div class="st full"><span class="cap">Corner radius</span><div id="radii" class="panel" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end"></div></div>
+      <div class="st full"><span class="cap">Elevation</span><div class="panel" style="display:flex;gap:16px;flex-wrap:wrap">
+        <div style="text-align:center"><div style="width:72px;height:56px;border-radius:12px;background:#fff;border:1px solid var(--line)"></div><div class="t-caption" style="margin-top:6px">0 · border</div></div>
+        <div style="text-align:center"><div style="width:72px;height:56px;border-radius:12px;background:#fff;box-shadow:var(--sh-1)"></div><div class="t-caption" style="margin-top:6px">1 · selected</div></div>
+        <div style="text-align:center"><div style="width:72px;height:56px;border-radius:12px;background:#fff;box-shadow:var(--sh-2)"></div><div class="t-caption" style="margin-top:6px">2 · FAB, snack</div></div>
+        <div style="text-align:center"><div style="width:72px;height:56px;border-radius:12px;background:#fff;box-shadow:var(--sh-3)"></div><div class="t-caption" style="margin-top:6px">3 · sheet, dialog</div></div>
+      </div></div>
+    </div>
+    <h3>Motion</h3>
+    <p class="t-body muted">Standard: 180 ms, <code>cubic-bezier(.2,0,0,1)</code> (Material emphasized). Snackbars stay 6 s when they offer Undo, 4 s otherwise. Skeletons shimmer at 1.2 s. Respect the system's "Remove animations" setting.</p>
+  </section>
+
+  <!-- ================= ICONS ================= -->
+  <section class="d-sec" id="icons">
+    <h2>Icons</h2>
+    <p class="lead">Material Symbols Rounded, 24 dp grid, drawn at 22 / 18 / 15. Outlined by default; <b>filled</b> for the active nav tab and the utility icons. Never emoji.</p>
+    <div class="panel"><div id="iconset" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:14px"></div></div>
+  </section>
+
+  <!-- ================= BUTTONS ================= -->
+  <section class="d-sec" id="buttons">
+    <h2>Buttons <code>HkButton</code></h2>
+    <p class="lead">One primary action per screen area. Labels say what happens ("Save reading", "Buy electricity"), never "OK" or "Submit". 44 dp tall by default (48 dp touch target with spacing), 36 dp small, 52 dp large for the main action in a sheet.</p>
+    <div id="btnmatrix"></div>
+    <h3>Sizes</h3>
+    <div class="panel ctr"><button class="btn btn-primary btn-sm"><span class="ms">check</span>Small 36</button><button class="btn btn-primary"><span class="ms">check</span>Default 44</button><button class="btn btn-primary btn-lg" style="width:240px"><span class="ms">check</span>Large 52</button></div>
+    <ul class="rules">
+      <li><b>Loading</b> keeps the button's width, swaps the icon for a spinner and changes the label to the action in progress ("Saving…"). The button can't be tapped while loading.</li>
+      <li><b>Disabled</b> is only for actions that will become possible on this screen (for example Save before a reading exists). Otherwise hide the action, or explain why it's blocked.</li>
+      <li><b>Danger</b> is only for actions that can't be undone, and it always opens a confirmation dialog first.</li>
+    </ul>
+  </section>
+
+  <!-- ================= ICON BUTTONS / FAB ================= -->
+  <section class="d-sec" id="iconbtn">
+    <h2>Icon buttons & Scan button</h2>
+    <p class="lead">Icon buttons are 40 dp with a 1 dp border. The Scan button is the app's main action. It sits raised in the centre of the nav bar on every tab, and is the only element besides primary buttons that uses an amber fill.</p>
+    <div class="panel"><div class="states">
+      <div class="st"><span class="cap">Default</span><span class="icon-btn"><span class="ms">notifications</span></span></div>
+      <div class="st"><span class="cap">With badge</span><span class="icon-btn"><span class="ms">notifications</span><i class="dot"></i></span></div>
+      <div class="st"><span class="cap">Pressed</span><span class="icon-btn is-pressed"><span class="ms">ios_share</span></span></div>
+      <div class="st"><span class="cap">Disabled</span><span class="icon-btn is-disabled"><span class="ms">ios_share</span></span></div>
+      <div class="st"><span class="cap">Bare</span><span class="icon-btn bare"><span class="ms">more_vert</span></span></div>
+      <div class="st"><span class="cap">Scan · default</span><button class="fab-scan"><span class="ms">document_scanner</span></button></div>
+      <div class="st"><span class="cap">Scan · pressed</span><button class="fab-scan is-pressed"><span class="ms">document_scanner</span></button></div>
+      <div class="st"><span class="cap">Scan · disabled <em>(viewer)</em></span><button class="fab-scan is-disabled"><span class="ms">document_scanner</span></button></div>
+    </div></div>
+  </section>
+
+  <!-- ================= INPUTS ================= -->
+  <section class="d-sec" id="inputs">
+    <h2>Text & reading fields <code>HkTextField</code></h2>
+    <p class="lead">52 dp fields with a visible label above (never placeholder-only). Reading fields use Roboto Mono at 24 sp with the unit fixed on the right, and open the number keypad.</p>
+    <div class="panel"><div class="states w2">
+      <div class="st full"><span class="cap">Default · empty</span><div class="field"><label class="field-label">Household name</label><input class="input" placeholder="e.g. Pretoria Home"></div></div>
+      <div class="st full"><span class="cap">Focused</span><div class="field"><label class="field-label">Household name</label><div class="input is-focused">Pretoria Ho<span style="width:1.5px;height:20px;background:var(--text);margin-left:-6px"></span></div></div></div>
+      <div class="st full"><span class="cap">Filled</span><div class="field"><label class="field-label">Household name</label><div class="input">Pretoria Home</div></div></div>
+      <div class="st full"><span class="cap">Disabled</span><div class="field"><label class="field-label">Household name</label><div class="input is-disabled">Pretoria Home</div><span class="field-help"><span class="ms">lock</span>Only owners can rename.</span></div></div>
+      <div class="st full"><span class="cap">Reading · filled + help</span><div class="field"><label class="field-label">Electricity reading</label><div class="input input-num">3733.4<span class="unit">kWh</span></div><span class="field-help"><span class="ms">history</span>Last: 3 722.2 kWh yesterday, Naledi</span></div></div>
+      <div class="st full"><span class="cap">Reading · sense-check warning</span><div class="field"><label class="field-label">Electricity reading</label><div class="input input-num" style="border:2px solid var(--elec);padding:0 13px">3373.4<span class="unit">kWh</span></div><span class="field-help" style="color:var(--warning)"><span class="ms">warning</span>Lower than yesterday's 3 722.2. Prepaid top-up? You can still save.</span></div></div>
+      <div class="st full"><span class="cap">Error</span><div class="field"><label class="field-label">Join code</label><div class="input is-error" style="font-family:var(--mono);letter-spacing:1px">HK-4F7Q</div><span class="field-error"><span class="ms">error</span>Codes have 5 characters after HK-.</span></div></div>
+      <div class="st full"><span class="cap">Loading <em>(checking code)</em></span><div class="field"><label class="field-label">Join code</label><div class="input" style="font-family:var(--mono);letter-spacing:1px">HK-4F7Q2<span class="spin" style="margin-left:auto;color:var(--primary-text)"></span></div><span class="field-help">Checking code…</span></div></div>
+    </div></div>
+  </section>
+
+  <!-- ================= CHIPS ================= -->
+  <section class="d-sec" id="chips">
+    <h2>Chips & segmented buttons</h2>
+    <p class="lead">Segmented buttons switch the view of one screen (utility on Reports). Chips filter or pick from a short list (month, cylinder size). Selected chips use Amber Soft with Amber Text.</p>
+    <div class="panel"><div class="states w2">
+      <div class="st"><span class="cap">Chip · default / selected / disabled</span><div class="chips"><span class="chip">Oct 2026</span><span class="chip is-selected"><span class="ms xs">check</span>Nov 2026</span><span class="chip is-disabled">Dec 2026</span></div></div>
+      <div class="st"><span class="cap">Chip · with icon</span><div class="chips"><span class="chip"><span class="ms xs">event</span>Custom period</span><span class="chip is-selected">19 kg</span><span class="chip">48 kg</span></div></div>
+      <div class="st full"><span class="cap">Segmented · utility</span><div class="seg"><button class="is-selected"><span class="ms fill xs" style="color:var(--elec)">bolt</span>Electricity</button><button>Water</button><button>Gas</button></div></div>
+      <div class="st full"><span class="cap">Segmented · one disabled <em>(utility not tracked)</em></span><div class="seg"><button>PDF</button><button class="is-selected">CSV</button><button disabled>Link</button></div></div>
+    </div></div>
+  </section>
+
+  <!-- ================= SWITCHES ================= -->
+  <section class="d-sec" id="switches">
+    <h2>Switches & radios</h2>
+    <p class="lead">Switches apply immediately (no Save button). Radios pick one option from a list that is too long for a segmented button.</p>
+    <div class="panel"><div class="states w2">
+      <div class="st full"><span class="cap">Setting rows</span><div class="card flush" style="width:100%">
+        <div class="setting-row"><div class="grow"><b>Buy-electricity reminder</b><span class="t-caption">3 days before run-out</span></div><button class="switch is-on" aria-label="on"></button></div>
+        <div class="setting-row"><div class="grow"><b>Log-a-reading nudge</b><span class="t-caption">After 4 days without a reading</span></div><button class="switch" aria-label="off"></button></div>
+        <div class="setting-row"><div class="grow"><b style="color:var(--text-3)">Unusual usage alerts</b><span class="t-caption">Turn on notifications in Android settings first</span></div><button class="switch is-on is-disabled" aria-label="disabled"></button></div>
+      </div></div>
+      <div class="st full"><span class="cap">Radios</span><div class="card flush" style="width:100%">
+        <div class="setting-row"><span class="radio is-on"></span><div class="grow"><b>ML Kit</b><span class="t-caption">Default, works offline</span></div></div>
+        <div class="setting-row"><span class="radio"></span><div class="grow"><b>7-segment model</b><span class="t-caption">For LCD meters · 4.2 MB</span></div></div>
+        <div class="setting-row"><span class="radio"></span><div class="grow"><b>Slashed-zero model</b><span class="t-caption">Downloading… 62%</span><div class="progress" style="margin-top:6px"><i style="width:62%"></i></div></div></div>
+      </div></div>
+    </div></div>
+  </section>
+
+  <!-- ================= BADGES ================= -->
+  <section class="d-sec" id="badges">
+    <h2>Badges, tags, avatars</h2>
+    <p class="lead">Badges carry status (confidence, sync, severity). Tags carry roles. Avatars use initials coloured by member, never photos of other members without their consent.</p>
+    <div class="panel"><div class="states w2">
+      <div class="st"><span class="cap">Confidence</span><div class="chips"><span class="badge b-success"><span class="ms fill">verified</span>High confidence</span><span class="badge b-warning">Medium · 4 readings</span><span class="badge b-neutral">Low · 2 readings</span></div></div>
+      <div class="st"><span class="cap">Sync</span><div class="chips"><span class="badge b-success"><span class="ms">cloud_done</span>Synced</span><span class="badge b-info"><span class="ms">cloud_upload</span>Waiting to sync</span><span class="badge b-danger"><span class="ms">cloud_off</span>Sync failed</span></div></div>
+      <div class="st"><span class="cap">Severity</span><div class="chips"><span class="badge b-danger"><span class="ms">warning</span>Critical</span><span class="badge b-warning">Warning</span><span class="badge b-info">Info</span></div></div>
+      <div class="st"><span class="cap">Change</span><div class="chips"><span class="badge b-danger"><span class="ms">north</span>4% vs Oct</span><span class="badge b-success"><span class="ms">south</span>6% vs last week</span></div></div>
+      <div class="st"><span class="cap">Role tags</span><div class="chips"><span class="tag is-accent">Owner</span><span class="tag">Admin</span><span class="tag">Member</span><span class="tag">Viewer</span><span class="tag" style="color:var(--info);border-color:var(--info-soft);background:var(--info-soft)">Sponsored</span></div></div>
+      <div class="st"><span class="cap">Avatars</span><div class="chips"><span class="av av-amber">LM</span><span class="av av-green">NM</span><span class="av av-water">SM</span><span class="av av-gas">GM</span><span class="av sm av-info">TM</span></div></div>
+    </div></div>
+  </section>
+
+  <!-- ================= CARDS ================= -->
+  <section class="d-sec" id="cards">
+    <h2>Cards & list rows</h2>
+    <p class="lead">White cards with a 1 dp border on the grey background. List rows go inside one card, separated by dividers. A row is: icon, title + supporting line, value in mono on the right.</p>
+    <div class="panel"><div class="states w3">
+      <div class="st full"><span class="cap">Utility list · default / pressed</span><div class="card flush">
+        <div class="list-row is-pressable"><span class="ic ic-gas"><span class="ms fill">local_fire_department</span></span><div><b>Gas · 19 kg</b><span class="sub">Swapped Mon by Sipho</span><div class="mini"><i style="width:42%;background:var(--gas)"></i></div></div><div class="num">9 d<small>Order by 2 Dec</small></div></div>
+        <div class="list-row is-pressable" style="background:var(--surface-2)"><span class="ic ic-water"><span class="ms fill">water_drop</span></span><div><b>Water</b><span class="sub">Last 1 284.6 m³ · Sipho</span></div><div class="num">0.42<small>m³/day</small></div></div>
+        <div class="list-row"><span class="ic ic-ok"><span class="ms">payments</span></span><div><b>November</b><span class="sub">Month-end est. R 1 080</span></div><div class="num">R642<small class="c-up">+4% vs Oct</small></div></div>
+      </div></div>
+      <div class="st full"><span class="cap">Reading row · synced / waiting / failed</span><div class="card flush">
+        <div class="list-row"><span class="ic ic-elec"><span class="ms fill">bolt</span></span><div><b class="t-num-m" style="font-size:15px">3 733.4 kWh</b><span class="sub">Today 18:42 · Naledi</span></div><span class="badge b-success"><span class="ms">cloud_done</span></span></div>
+        <div class="list-row"><span class="ic ic-elec"><span class="ms fill">bolt</span></span><div><b class="t-num-m" style="font-size:15px">3 722.2 kWh</b><span class="sub">Yesterday · you</span></div><span class="badge b-info"><span class="ms">cloud_upload</span>Waiting</span></div>
+        <div class="list-row"><span class="ic ic-elec"><span class="ms fill">bolt</span></span><div><b class="t-num-m" style="font-size:15px">3 710.9 kWh</b><span class="sub">Mon · you</span></div><span class="btn btn-ghost btn-sm" style="color:var(--danger)">Retry</span></div>
+      </div></div>
+      <div class="st full"><span class="cap">Row · loading</span><div class="card flush">
+        <div class="list-row"><span class="sk" style="width:34px;height:34px;border-radius:10px"></span><div><div class="sk" style="width:120px;height:12px"></div><div class="sk" style="width:80px;height:10px;margin-top:6px"></div></div><div class="sk" style="width:40px;height:16px"></div></div>
+        <div class="list-row"><span class="sk" style="width:34px;height:34px;border-radius:10px"></span><div><div class="sk" style="width:100px;height:12px"></div><div class="sk" style="width:140px;height:10px;margin-top:6px"></div></div><div class="sk" style="width:40px;height:16px"></div></div>
+      </div></div>
+    </div></div>
+  </section>
+
+  <!-- ================= TILES ================= -->
+  <section class="d-sec" id="tiles">
+    <h2>Utility tiles <code>UtilityTile</code></h2>
+    <p class="lead">One component, two jobs. On <b>Home</b> a tap opens the scanner for that meter and the supporting line shows when it was last logged. On <b>Reports</b> the same tiles pick the utility: the supporting line shows the month-end estimate in mono, and the selected tile gets a 2 dp amber border. On Home, after 4 days without a reading, the line turns amber and a dot appears.</p>
+    <div class="panel"><div class="states w2">
+      <div class="st full"><span class="cap">Default</span><div class="tiles"><div class="tile"><span class="ic ic-elec"><span class="ms fill">bolt</span></span><b>Electricity</b><span>2 h ago</span></div><div class="tile"><span class="ic ic-water"><span class="ms fill">water_drop</span></span><b>Water</b><span>3 days ago</span></div><div class="tile"><span class="ic ic-gas"><span class="ms fill">propane_tank</span></span><b>Gas</b><span>Mon</span></div></div></div>
+      <div class="st full"><span class="cap">Pressed / due / not tracked</span><div class="tiles"><div class="tile is-pressed"><span class="ic ic-elec"><span class="ms fill">bolt</span></span><b>Electricity</b><span>2 h ago</span></div><div class="tile is-due"><span class="ic ic-water"><span class="ms fill">water_drop</span></span><b>Water</b><span>5 days ago</span></div><div class="tile" style="border-style:dashed"><span class="ic ic-neutral"><span class="ms">add</span></span><b>Gas</b><span>Add meter</span></div></div></div>
+      <div class="st full"><span class="cap">Empty <em>(new household)</em></span><div class="tiles"><div class="tile"><span class="ic ic-elec"><span class="ms fill">bolt</span></span><b>Electricity</b><span>No readings</span></div><div class="tile"><span class="ic ic-water"><span class="ms fill">water_drop</span></span><b>Water</b><span>No readings</span></div><div class="tile"><span class="ic ic-gas"><span class="ms fill">propane_tank</span></span><b>Gas</b><span>No cylinder</span></div></div></div>
+      <div class="st full"><span class="cap">Reports · selected <em>(same tile, value instead of time)</em></span><div class="tiles"><div class="tile is-selected"><span class="ic ic-elec"><span class="ms fill">bolt</span></span><b>Electricity</b><span class="val">386 kWh</span></div><div class="tile"><span class="ic ic-water"><span class="ms fill">water_drop</span></span><b>Water</b><span class="val">12.8 m³</span></div><div class="tile"><span class="ic ic-gas"><span class="ms fill">propane_tank</span></span><b>Gas</b><span class="val">6.1 kg</span></div></div></div>
+      <div class="st full"><span class="cap">Loading</span><div class="tiles"><div class="tile"><span class="sk" style="width:36px;height:36px;border-radius:11px"></span><span class="sk" style="width:60px;height:11px;margin-top:4px"></span><span class="sk" style="width:40px;height:9px"></span></div><div class="tile"><span class="sk" style="width:36px;height:36px;border-radius:11px"></span><span class="sk" style="width:60px;height:11px;margin-top:4px"></span><span class="sk" style="width:40px;height:9px"></span></div><div class="tile"><span class="sk" style="width:36px;height:36px;border-radius:11px"></span><span class="sk" style="width:60px;height:11px;margin-top:4px"></span><span class="sk" style="width:40px;height:9px"></span></div></div></div>
+    </div></div>
+  </section>
+
+  <!-- ================= CYLINDER ================= -->
+  <section class="d-sec" id="cylinder">
+    <h2>Gas cylinder <code>GasCylinder · PropaneGasCylinderComposable</code></h2>
+    <p class="lead">A restyle of the existing tracker. The drawing keeps the Canvas proportions from <code>PropaneGasCylinderComposable.kt</code>: height follows the size (4 kg 190, 9 kg 225, 14 kg 265, 48 kg 305). Its colour is the user's real cylinder colour from <code>DefaultGasCylinderColors</code>. A dashed line and faded top show the <b>projected gas left</b>. The same drawing is reused small in list rows, so a cylinder is always shown in its own colour and proportions, never as a generic icon.</p>
+    <h3>Sizes · dynamic height</h3>
+    <div class="panel"><div id="cylSizes" style="display:flex;gap:28px;align-items:flex-end;flex-wrap:wrap"></div></div>
+    <h3>Projected level</h3>
+    <div class="panel"><div id="cylLevels" style="display:flex;gap:28px;align-items:flex-end;flex-wrap:wrap"></div>
+      <ul class="rules"><li><b>Level</b> = (size − kg/day × days in use) ÷ size. The kg/day rate is the average of finished cylinders (size ÷ days lasted). With none, use the size's default from <code>CylinderSizeInfoList</code>.</li><li><b>Days-left colour</b>: under 5 days Danger, under 10 Electricity amber, otherwise Success.</li><li><b>New cylinder</b> is the greyed, dashed placeholder on page 1 of the carousel, exactly as today.</li></ul></div>
+    <h3>Colours · <code>DefaultGasCylinderColors</code></h3>
+    <div class="panel"><div id="cylColors" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:16px"></div></div>
+    <h3>Pickers</h3>
+    <div class="panel"><div class="states w3">
+      <div class="st full"><span class="cap">Size options · default / selected / disabled</span><div class="size-opts" id="sizeOpts" style="width:100%"></div></div>
+      <div class="st full"><span class="cap">Colour swatches · selected / default / disabled</span><div class="swatch-row" id="swatches2"></div><span class="t-caption">Selection ring uses Text, not amber, so it shows on Caution Yellow too.</span></div>
+      <div class="st full"><span class="cap">Carousel dots · visited / current / upcoming</span><div class="pager-dots"><i class="is-visited"></i><i class="is-current"></i><i></i><i></i></div></div>
+    </div></div>
+    <h3>History rows</h3>
+    <div class="panel"><div class="states w3">
+      <div class="st full"><span class="cap">Active · finished</span><div class="card flush" style="width:100%" id="cylRows"></div></div>
+      <div class="st full"><span class="cap">Home row</span><div class="card flush" style="width:100%" id="cylHome"></div></div>
+    </div></div>
+  </section>
+
+  <!-- ================= ACTIVITY ================= -->
+  <section class="d-sec" id="activity">
+    <h2>Activity card <code>ActivityCard</code></h2>
+    <p class="lead">Who did what, inside a card, never as loose text. Each row has the member's avatar, the action with the value in mono, what it was, and when. Home shows the latest 3 and opens the full feed on tap.</p>
+    <div class="panel"><div class="states w3">
+      <div class="st full"><span class="cap">Default</span><div class="card flush" style="width:100%">
+        <div class="activity-row"><span class="av sm av-green">NM</span><div class="what">Naledi logged <b>3 733.4 kWh</b><span class="sub">Electricity reading</span></div><span class="when">2 h ago</span></div>
+        <div class="activity-row"><span class="av sm av-green">NM</span><div class="what">Naledi topped up <b>120 kWh</b> for R350<span class="sub">Prepaid electricity</span></div><span class="when">Yesterday</span></div>
+        <div class="activity-row"><span class="av sm av-water">SM</span><div class="what">Sipho logged <b>1 284.6 m³</b><span class="sub">Water reading</span></div><span class="when">Sat</span></div></div></div>
+      <div class="st full"><span class="cap">Your action, offline</span><div class="card flush" style="width:100%">
+        <div class="activity-row"><span class="av sm av-amber">LM</span><div class="what">You logged <b>3 745.6 kWh</b><span class="sub">Electricity reading · waiting to sync</span></div><span class="when">Just now</span></div></div></div>
+      <div class="st full"><span class="cap">Loading</span><div class="card flush" style="width:100%">
+        <div class="activity-row"><span class="sk" style="width:28px;height:28px;border-radius:8px"></span><div><div class="sk" style="width:150px;height:11px"></div><div class="sk" style="width:90px;height:9px;margin-top:6px"></div></div><div class="sk" style="width:36px;height:10px"></div></div>
+        <div class="activity-row"><span class="sk" style="width:28px;height:28px;border-radius:8px"></span><div><div class="sk" style="width:130px;height:11px"></div><div class="sk" style="width:70px;height:9px;margin-top:6px"></div></div><div class="sk" style="width:36px;height:10px"></div></div></div></div>
+    </div></div>
+  </section>
+
+  <!-- ================= HERO ================= -->
+  <section class="d-sec" id="hero">
+    <h2>Run-out hero & gauge <code>RunOutCard</code></h2>
+    <p class="lead">The headline of Home for prepaid electricity. It always says what the number is based on. Colour moves with urgency: green above 7 days, electricity-amber from 3 to 7 days, red under 3 days. With fewer than 3 readings it shows no number at all.</p>
+    <div class="panel"><div class="states w3">
+      <div class="st full"><span class="cap">Healthy · &gt; 7 days</span><div class="hero is-ok"><div class="t-label">Electricity left</div><div class="t-display">11.4<small>days</small></div><div class="t-caption">142.5 kWh at 12.5 kWh/day · empty around Fri 7 Dec</div><div class="gauge is-ok" id="g1"></div><div class="btn-row"><span class="btn btn-secondary"><span class="ms">add</span>Log top-up</span></div></div></div>
+      <div class="st full"><span class="cap">Running low · &lt; 3 days</span><div class="hero is-critical"><div class="t-label">Electricity left</div><div class="t-display">2.9<small>days</small></div><div class="t-caption">37.0 kWh at 12.5 kWh/day · empty around Thu 29 Nov</div><div class="gauge is-low" id="g2"></div><div class="btn-row"><span class="btn btn-primary"><span class="ms">open_in_new</span>Buy electricity</span><span class="btn btn-secondary"><span class="ms">add</span>Top-up</span></div></div></div>
+      <div class="st full"><span class="cap">Not enough data</span><div class="hero"><div class="t-label">Electricity left</div><div style="display:flex;gap:12px;align-items:center;margin:12px 0"><span class="ic ic-neutral" style="width:44px;height:44px"><span class="ms">hourglass_top</span></span><div><div class="t-title">Needs 2 more readings</div><div class="t-caption">We'll predict the run-out date after 3 readings, a day apart.</div></div></div><div class="progress"><i style="width:33%"></i></div><div class="t-caption" style="margin-top:6px">1 of 3 readings</div></div></div>
+      <div class="st full"><span class="cap">Loading</span><div class="hero"><div class="sk" style="width:110px;height:11px"></div><div class="sk" style="width:150px;height:48px;margin:10px 0 8px"></div><div class="sk" style="width:240px;height:11px"></div><div class="sk" style="width:100%;height:12px;margin:14px 0"></div><div class="sk" style="width:100%;height:44px;border-radius:12px"></div></div></div>
+    </div></div>
+  </section>
+
+  <!-- ================= DIGITS ================= -->
+  <section class="d-sec" id="digits">
+    <h2>OCR digits <code>ReadingDigits</code></h2>
+    <p class="lead">The scanner's result, one box per digit. A digit the model isn't sure about gets an amber outline and a "?". Tap it to change just that digit with the number keypad, instead of retyping the whole reading.</p>
+    <div class="panel"><div class="states w2">
+      <div class="st full"><span class="cap">Scanning</span><div class="digits is-scanning"><span>0</span><span>0</span><span>0</span><span>0</span><span class="dp">.</span><span>0</span></div></div>
+      <div class="st full"><span class="cap">Confident</span><div class="digits"><span>3</span><span>7</span><span>3</span><span>3</span><span class="dp">.</span><span>4</span></div></div>
+      <div class="st full"><span class="cap">One digit unsure</span><div class="digits"><span>3</span><span>7</span><span class="is-unsure">3</span><span>3</span><span class="dp">.</span><span>4</span></div></div>
+      <div class="st full"><span class="cap">Editing → edited</span><div class="digits"><span>3</span><span>7</span><span class="is-editing">3</span><span>3</span><span class="dp">.</span><span class="is-edited">4</span></div></div>
+    </div></div>
+  </section>
+
+  <!-- ================= CHARTS ================= -->
+  <section class="d-sec" id="charts">
+    <h2>Charts & stats</h2>
+    <p class="lead">Daily usage is always a bar chart: one bar per day, grey for normal, gas-red for anomalies, hatched for projected days, ink for the selected bar. A dashed line marks the average. Stat grids pair a mono number with its change or its confidence.</p>
+    <div class="panel"><div class="states w3">
+      <div class="st full"><span class="cap">Bar chart · default + selected</span><div class="card" style="width:100%"><div style="display:flex;justify-content:space-between"><span class="t-label">Daily kWh · Nov</span><span class="t-label" style="color:var(--text)">Tue 18 · 16.4</span></div><div class="bars" id="bars1" style="margin-top:10px"></div><div class="axis"><span>01</span><span>10</span><span>20</span><span>30</span></div></div></div>
+      <div class="st full"><span class="cap">Stat grid</span><div class="stat-grid" style="width:100%">
+        <div><span class="t-label">Next 7 days</span><b class="t-num-l">87.5 <small>kWh</small></b><span class="badge b-success" style="margin-top:4px"><span class="ms fill">verified</span>High confidence</span></div>
+        <div><span class="t-label">Month-end use</span><b class="t-num-l">386 <small>kWh</small></b><span class="delta c-up"><span class="ms">north</span>4% vs Oct</span></div>
+        <div><span class="t-label">Month-end cost</span><b class="t-num-l">R1 080</b><span class="delta muted">R642 so far</span></div>
+        <div><span class="t-label">Based on</span><b class="t-num-l">14 <small>readings</small></b><span class="delta muted">R2.89 / kWh</span></div>
+      </div></div>
+      <div class="st full"><span class="cap">Chart · not enough data</span><div class="card" style="width:100%"><span class="t-label">Daily kWh · Nov</span><div class="bars" style="margin-top:10px;opacity:.35" id="bars2"></div><div style="text-align:center;margin-top:-70px;position:relative;padding-bottom:30px"><div class="t-title" style="font-size:14px">Not enough readings yet</div><div class="t-caption">Log 2 readings on different days to see daily usage.</div></div></div></div>
+      <div class="st full"><span class="cap">Chart · loading</span><div class="card" style="width:100%"><div class="sk" style="width:120px;height:11px"></div><div style="display:flex;align-items:flex-end;gap:3px;height:104px;margin-top:10px" id="bars3"></div></div></div>
+    </div></div>
+  </section>
+
+  <!-- ================= PROGRESS ================= -->
+  <section class="d-sec" id="progress">
+    <h2>Loading & skeletons</h2>
+    <p class="lead">Show skeletons in the shape of the content for first loads. Use a spinner only inside the control that is busy. Indeterminate bars are for sync and uploads where the size is unknown. Cached data always shows straight away; refresh happens quietly.</p>
+    <div class="panel"><div class="states w2">
+      <div class="st full"><span class="cap">Linear · determinate</span><div class="progress" style="width:100%"><i style="width:62%"></i></div><span class="t-caption">Downloading 7-segment model · 62%</span></div>
+      <div class="st full"><span class="cap">Linear · indeterminate</span><div class="progress is-indeterminate" style="width:100%"><i></i></div><span class="t-caption">Syncing 2 readings…</span></div>
+      <div class="st"><span class="cap">Spinner</span><div class="ctr"><span class="spin" style="color:var(--primary-text)"></span><span class="spin lg" style="color:var(--primary-text)"></span></div></div>
+      <div class="st full"><span class="cap">Skeleton · text</span><div style="width:100%"><div class="sk" style="width:60%;height:14px"></div><div class="sk" style="width:90%;height:11px;margin-top:8px"></div><div class="sk" style="width:75%;height:11px;margin-top:6px"></div></div></div>
+    </div></div>
+  </section>
+
+  <!-- ================= SNACK ================= -->
+  <section class="d-sec" id="snack">
+    <h2>Snackbars, banners, alerts</h2>
+    <p class="lead"><b>Snackbars</b> confirm an action the user just took and usually offer Undo. <b>Banners</b> describe the app's state (offline, sync) and stay until it changes. <b>Alert cards</b> ask the household to do something and carry the action.</p>
+    <div class="panel"><div class="states w3">
+      <div class="st full"><span class="cap">Snackbar · with undo</span><div class="snack"><span class="ms sm" style="color:#6FD49A">check_circle</span><span class="grow">Reading saved · 3 733.4 kWh</span><span class="act">UNDO</span></div></div>
+      <div class="st full"><span class="cap">Snackbar · offline save</span><div class="snack"><span class="ms sm">cloud_upload</span><span class="grow">Saved on phone. Will sync when you're online.</span><span class="act">UNDO</span></div></div>
+      <div class="st full"><span class="cap">Snackbar · error</span><div class="snack"><span class="ms sm" style="color:#F2B8B5">error</span><span class="grow">Couldn't send join request</span><span class="act">RETRY</span></div></div>
+      <div class="st full"><span class="cap">Banner · offline</span><div class="banner banner-offline"><span class="ms">cloud_off</span><span class="grow">You're offline · 1 reading waiting to sync</span></div></div>
+      <div class="st full"><span class="cap">Banner · info / success / danger</span><div class="banner banner-info" style="width:100%"><span class="ms">sync</span><span class="grow">Syncing 2 readings…</span></div><div class="banner banner-success" style="width:100%"><span class="ms">cloud_done</span><span class="grow">All readings synced</span></div><div class="banner banner-danger" style="width:100%"><span class="ms">error</span><span class="grow">2 readings didn't sync</span><span class="link" style="color:var(--danger)">Retry</span></div></div>
+      <div class="st full"><span class="cap">Alert card · join request</span><div class="alert" style="width:100%"><div style="display:flex;justify-content:space-between"><span class="t-label" style="color:var(--elec)">Join request</span><span class="t-label">20 min</span></div><div class="t-title" style="font-size:15px;margin-top:6px">Thabo M. wants to join</div><div class="btn-row" style="margin-top:10px"><span class="btn btn-secondary btn-sm">Decline</span><span class="btn btn-primary btn-sm">Approve as member</span></div></div></div>
+    </div></div>
+  </section>
+
+  <!-- ================= OVERLAYS ================= -->
+  <section class="d-sec" id="overlays">
+    <h2>Sheets & dialogs</h2>
+    <p class="lead">Bottom sheets hold short tasks that keep context (export, share code, log a top-up). Dialogs are only for confirming destructive actions, and the destructive button names the action.</p>
+    <div class="panel"><div class="states w3">
+      <div class="st"><span class="cap">Bottom sheet · export</span><div class="phone-mini" style="height:360px"><div class="scrim"><div class="sheet"><div class="grab"></div><div class="t-title">Export November</div><div class="t-caption" style="margin-bottom:12px">Electricity · 14 readings</div><div class="seg" style="margin-bottom:12px"><button class="is-selected">PDF</button><button>CSV</button></div><div class="btn-row"><span class="btn btn-secondary"><span class="ms">link</span>Copy link</span><span class="btn btn-primary"><span class="ms">share</span>Share</span></div><div class="t-caption" style="margin-top:10px;text-align:center">Links expire after 7 days.</div></div></div></div></div>
+      <div class="st"><span class="cap">Dialog · destructive</span><div class="phone-mini" style="height:360px"><div class="scrim center"><div class="dialog"><h3>Delete this reading?</h3><p>3 733.4 kWh from today 18:42 will be removed for everyone in Pretoria Home. This can't be undone.</p><div class="actions"><span class="btn btn-ghost">Cancel</span><span class="btn btn-danger">Delete reading</span></div></div></div></div></div>
+      <div class="st"><span class="cap">Dialog · loading</span><div class="phone-mini" style="height:360px"><div class="scrim center"><div class="dialog"><h3>Delete this reading?</h3><p>3 733.4 kWh from today 18:42 will be removed for everyone in Pretoria Home. This can't be undone.</p><div class="actions"><span class="btn btn-ghost is-disabled">Cancel</span><span class="btn btn-danger is-loading"><span class="spin"></span>Deleting…</span></div></div></div></div></div>
+    </div></div>
+  </section>
+
+  <!-- ================= EMPTY ================= -->
+  <section class="d-sec" id="empty">
+    <h2>Empty states <code>HkEmpty</code></h2>
+    <p class="lead">Every empty state has three parts: what's missing, why it matters to this household, and one action that fixes it. Never a dead end, never a made-up number.</p>
+    <div class="panel"><div class="states w3" id="empties"></div></div>
+  </section>
+
+  <!-- ================= NAV ================= -->
+  <section class="d-sec" id="nav">
+    <h2>App bar & navigation bar</h2>
+    <p class="lead">Four destinations plus the raised Scan button in the middle. The active tab uses Amber Text with a filled icon. On Home, the app bar title is the household switcher.</p>
+    <div class="panel"><div class="states w3">
+      <div class="st full"><span class="cap">App bar · home (household switcher)</span><div class="card flush" style="width:100%"><div class="appbar"><div class="hh-switch"><span>Pretoria Home <span class="ms sm muted">expand_more</span></span><small>4 MEMBERS · SYNCED</small></div><span class="icon-btn"><span class="ms">notifications</span><i class="dot"></i></span></div></div></div>
+      <div class="st full"><span class="cap">App bar · inner screen</span><div class="card flush" style="width:100%"><div class="appbar"><div class="lead"><span class="icon-btn bare"><span class="ms">arrow_back</span></span><span class="title">Reading history</span></div><span class="icon-btn"><span class="ms">filter_list</span></span></div></div></div>
+      <div class="st full"><span class="cap">Nav bar · Home active</span><div style="width:100%;padding-top:24px;background:var(--bg);border-radius:12px;overflow:hidden"><div class="navbar"><div class="is-active"><span class="ms">space_dashboard</span>Home</div><div><span class="ms">monitoring</span>Reports</div><div><button class="fab-scan"><span class="ms">document_scanner</span></button></div><div><span class="ms">group</span>Household</div><div><span class="ms">settings</span>Settings</div></div></div></div>
+    </div></div>
+  </section>
+</main>
+</div>
+<script src="hk-cylinder.js"></script>
+<div class="toast" id="toast"><div class="snack"><span class="grow" id="toastTxt">Copied</span></div></div>
+
+<script>
+const C = [
+ ['Neutrals',[
+  ['Background','--bg','#F5F6F7','App background behind cards.'],
+  ['Surface','--surface','#FFFFFF','Cards, sheets, nav bar, inputs.'],
+  ['Surface 2','--surface-2','#EEF0F2','Tracks, segmented bg, pressed rows, disabled fills.'],
+  ['Line','--line','#E0E3E7','Card borders and dividers.'],
+  ['Line strong','--line-strong','#C9CED4','Input borders, chart bars.'],
+  ['Text','--text','#15191C','Headings, body, numbers.'],
+  ['Text 2','--text-2','#5C666E','Supporting text, labels.'],
+  ['Text 3','--text-3','#9AA3AA','Disabled text, placeholders only.']]],
+ ['Brand · Amber',[
+  ['Primary','--primary','#FFB020','Fills only: primary buttons, Scan, switches on.'],
+  ['Primary pressed','--primary-pressed','#E89A00','Pressed primary fill.'],
+  ['On primary','--on-primary','#241800','Text and icons on amber.'],
+  ['Amber text','--primary-text','#8F5600','Amber used as text, links, active tab, focus ring.'],
+  ['Amber soft','--primary-soft','#FFF1D2','Selected chips, tonal buttons, highlights.']]],
+ ['Utilities',[
+  ['Electricity','--elec','#B86E00','Icons, gauge, charts for electricity.'],
+  ['Electricity soft','--elec-soft','#FFF1D2','Electricity icon tile background.'],
+  ['Water','--water','#0A7C96','Icons and charts for water.'],
+  ['Water soft','--water-soft','#DDF3F8','Water icon tile background.'],
+  ['Gas','--gas','#C9402A','Icons, charts, anomaly bars.'],
+  ['Gas soft','--gas-soft','#FDE4DE','Gas icon tile background.']]],
+ ['Status',[
+  ['Success','--success','#1E7F47','Synced, normal, savings, healthy run-out.'],
+  ['Success soft','--success-soft','#DDF3E5','Success badges and banners.'],
+  ['Warning','--warning','#8F5600','Sense-check warnings, due readings.'],
+  ['Warning soft','--warning-soft','#FFF1D2','Warning badges and banners.'],
+  ['Danger','--danger','#B3261E','Errors, destructive actions, critical run-out.'],
+  ['Danger soft','--danger-soft','#F9DEDC','Error badges and banners.'],
+  ['Info','--info','#3E5BA9','Sync in progress, sponsored labels, tips.'],
+  ['Info soft','--info-soft','#E3E9FA','Info badges and banners.']]],
+ ['Inverse & special',[
+  ['Inverse','--inverse','#1E2326','Snackbars, offline banner.'],
+  ['On inverse','--on-inverse','#F1F3F4','Text on inverse.'],
+  ['Camera','--camera','#1C1F1D','Scanner background; status bar on camera.'],
+  ['LCD','--lcd','#9FAE8A','Meter illustration only.'],
+  ['Scrim','--scrim','rgba(21,25,28,.45)','Behind sheets and dialogs.']]]
+];
+const lum=h=>{h=h.replace('#','');const c=[0,2,4].map(i=>parseInt(h.substr(i,2),16)/255).map(v=>v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4));return .2126*c[0]+.7152*c[1]+.0722*c[2]};
+const ratio=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+const ink=h=>h.startsWith('#')&&lum(h)<.4?'#fff':'#15191C';
+document.getElementById('swatches').innerHTML=C.map(([g,list])=>`<div class="sw-group"><h4>${g}</h4><div class="sw-grid">${list.map(([n,t,h,u])=>`
+ <div class="sw"><div class="chipc" style="background:${h};color:${ink(h)};${h=='#FFFFFF'?'border-bottom:1px solid var(--line)':''}"><span>Aa</span>${h.startsWith('#')&&h!='#FFFFFF'?`<span>${ratio(h,'#FFFFFF').toFixed(1)}:1 on white</span>`:''}</div>
+ <div class="meta"><b>${n}</b><button class="copy" data-copy="${h}"><code>${h}</code></button><span class="tok">var(${t})</span><p>${u}</p></div></div>`).join('')}</div></div>`).join('');
+
+const pairs=[['Text','#15191C','Surface','#FFFFFF'],['Text 2','#5C666E','Surface','#FFFFFF'],['Text 2','#5C666E','Background','#F5F6F7'],['On primary','#241800','Primary','#FFB020'],['Amber text','#8F5600','Surface','#FFFFFF'],['Amber text','#8F5600','Amber soft','#FFF1D2'],['Electricity','#B86E00','Electricity soft','#FFF1D2'],['Water','#0A7C96','Surface','#FFFFFF'],['Gas','#C9402A','Surface','#FFFFFF'],['Success','#1E7F47','Success soft','#DDF3E5'],['Danger','#B3261E','Danger soft','#F9DEDC'],['On inverse','#F1F3F4','Inverse','#1E2326'],['Primary (as text)','#FFB020','Surface','#FFFFFF'],['Text 3','#9AA3AA','Surface','#FFFFFF']];
+document.getElementById('contrast').innerHTML+=pairs.map(([fn,f,bn,b])=>{const r=ratio(f,b);const g=r>=7?'AAA':r>=4.5?'AA':r>=3?'AA large / icons':'Fail · decorative only';const cls=r>=4.5?'b-success':r>=3?'b-warning':'b-danger';return `<tr><td>${fn} <code>${f}</code></td><td>${bn} <code>${b}</code></td><td><span style="background:${b};color:${f};padding:4px 10px;border-radius:6px;border:1px solid var(--line);font-weight:500">3 733.4 kWh</span></td><td><code>${r.toFixed(2)}:1</code></td><td><span class="badge ${cls}">${g}</span></td></tr>`}).join('');
+
+const T=[
+ ['Display','t-display','Roboto Mono 500 · 52/52 · −2 tracking','Run-out countdown','2.9 days'],
+ ['Headline','t-headline','Roboto 500 · 20/28','Screen titles','Reports'],
+ ['Title','t-title','Roboto 500 · 16/22','Card titles, list titles, dialog titles','Electricity runs out Thursday'],
+ ['Body','t-body','Roboto 400 · 14/20','Default text, buttons (500)','Naledi bought 120 kWh for R350 yesterday.'],
+ ['Body small','t-body-sm','Roboto 400 · 12.5/18','Explanations, "based on" lines','Based on 12.5 kWh/day over the last 7 days.'],
+ ['Caption','t-caption','Roboto 400 · 11.5/16 · Text 2','Supporting lines, timestamps','2 h ago · Naledi'],
+ ['Label','t-label','Roboto Mono 500 · 11/14 · +0.1em · CAPS','Section and stat labels','Next 7 days'],
+ ['Number L','t-num-l','Roboto Mono 500 · 20/26','Stat values','R1 080'],
+ ['Number M','t-num-m','Roboto Mono 500 · 16/22','List values, readings','3 733.4 kWh'],
+ ['Mono small','t-mono-sm','Roboto Mono 400 · 12/18','Activity feed, codes in text','NALEDI logged 3 733.4 kWh · 2h']];
+document.getElementById('typescale').innerHTML=T.map(([n,c,s,u,x])=>`<div class="type-row"><div class="spec"><b>${n}</b>${s}<br>${u}<br><code>.${c}</code></div><div class="${c}">${x}</div></div>`).join('');
+
+document.getElementById('spacing').innerHTML=[4,8,12,16,20,24,32].map((v,i)=>`<div style="display:flex;align-items:center;gap:10px"><code style="width:60px;font:500 12px var(--mono)">s${[1,2,3,4,5,6,8][i]} · ${v}</code><span style="height:10px;width:${v*4}px;background:var(--primary);border-radius:2px"></span></div>`).join('');
+document.getElementById('radii').innerHTML=[['xs',6,'badges'],['sm',10,'chips, avatars'],['md',12,'buttons, inputs'],['lg',16,'cards'],['xl',24,'sheets, dialogs'],['full',999,'switches']].map(([n,v,u])=>`<div style="text-align:center"><div style="width:56px;height:56px;border:2px solid var(--primary-text);background:var(--primary-soft);border-radius:${Math.min(v,28)}px"></div><div class="t-caption" style="margin-top:6px"><b style="color:var(--text)">${n} ${v}</b><br>${u}</div></div>`).join('');
+
+const IC=[['bolt','Electricity',1],['water_drop','Water',1],['propane_tank','Gas cylinder',1],['local_fire_department','Gas usage',1],['document_scanner','Scan',0],['keyboard','Type reading',0],['space_dashboard','Home',0],['monitoring','Reports',0],['group','Household',0],['settings','Settings',0],['notifications','Alerts',0],['open_in_new','Buy (external)',0],['local_shipping','Order gas',0],['ios_share','Export / share',0],['qr_code_2','QR code',0],['verified','Confidence',1],['cloud_upload','Waiting to sync',0],['cloud_off','Offline',0],['warning','Anomaly',0],['lightbulb','Suggestion',0]];
+document.getElementById('iconset').innerHTML=IC.map(([i,n,f])=>`<div style="display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center"><span class="ic ic-neutral" style="width:44px;height:44px;border-radius:12px;background:var(--surface);border:1px solid var(--line);color:var(--text)"><span class="ms ${f?'fill':''}">${i}</span></span><span class="t-caption">${n}<br><code style="font:400 10.5px var(--mono)">${i}</code></span></div>`).join('');
+
+// Button matrix
+const kinds=[['Primary','btn-primary','check','Save reading','Saving…'],['Secondary','btn-secondary','keyboard','Type instead','Opening…'],['Tonal','btn-tonal','add','Log top-up','Adding…'],['Ghost','btn-ghost','event','Custom period','Loading…'],['Danger','btn-danger','delete','Delete reading','Deleting…']];
+const states=[['Default',''],['Pressed','is-pressed'],['Focused','is-focused'],['Disabled','is-disabled'],['Loading','is-loading']];
+document.getElementById('btnmatrix').innerHTML=`<div class="panel" style="overflow-x:auto"><table style="border-collapse:separate;border-spacing:16px 14px;margin:-14px -16px">
+<tr><td></td>${states.map(s=>`<td class="t-label">${s[0]}</td>`).join('')}</tr>
+${kinds.map(([n,c,i,l,ld])=>`<tr><td class="t-label" style="white-space:nowrap">${n}</td>${states.map(([sn,sc])=>`<td><button class="btn ${c} ${sc}">${sc=='is-loading'?`<span class="spin"></span>${ld}`:`<span class="ms">${i}</span>${l}`}</button></td>`).join('')}</tr>`).join('')}
+</table></div>`;
+
+// gauges
+const gauge=(el,n)=>document.getElementById(el).innerHTML=Array.from({length:20},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('');
+gauge('g1',15);gauge('g2',3);
+// bars
+const d=[55,58,52,60,57,62,50,56,59,61,54,58,57,60,55,57,88,92,85,60,58,56,59,57,58];
+document.getElementById('bars1').innerHTML='<span class="avg" style="bottom:60%"></span>'+d.map((h,i)=>`<i class="${i==17?'is-selected':h>80?'is-anomaly':''}" style="height:${h}%"></i>`).join('')+[60,62,58,60,61].map(h=>`<i class="is-projected" style="height:${h}%"></i>`).join('');
+document.getElementById('bars2').innerHTML=Array.from({length:30},()=>`<i class="is-projected" style="height:40%"></i>`).join('');
+document.getElementById('bars3').innerHTML=Array.from({length:30},(_,i)=>`<span class="sk" style="flex:1;height:${40+((i*37)%45)}%;border-radius:3px 3px 0 0"></span>`).join('');
+
+// empties
+const E=[
+ ['First launch · Home','amber','bolt','Log your first reading','Point the camera at your electricity meter. After 3 readings we can tell you when units will run out.','<span class="ms">document_scanner</span>Scan electricity meter','btn-primary'],
+ ['Reports · not enough data','','monitoring','Reports need a few more readings','You have 1 reading this month. Log 2 more, a day apart, to see daily usage and a month-end estimate.','<span class="ms">add</span>Log a reading','btn-secondary'],
+ ['Household · only you','amber','group_add','Share Pretoria Home','Invite the people you live with so anyone can log a reading and everyone gets run-out reminders.','<span class="ms">share</span>Share join code','btn-primary'],
+ ['History · no readings','','history','No readings yet','Readings anyone in the household logs will appear here, newest first.','',''],
+ ['Notifications · all clear','','notifications_off','You\'re all caught up','Run-out reminders and unusual-usage alerts for Pretoria Home will show up here.','',''],
+ ['Gas · no cylinder','','propane_tank','Track your gas cylinder','Add the cylinder you\'re using now and we\'ll estimate when it will run out.','<span class="ms">add</span>Add cylinder','btn-secondary'],
+ ['Order gas · no suppliers','','location_off','No suppliers near you yet','We don\'t have LPG suppliers listed for Polokwane. You can still log the cylinder you buy.','<span class="ms">edit_location</span>Change area','btn-secondary'],
+ ['Scanner · nothing found','','center_focus_weak','Can\'t find a reading','Move closer, avoid glare, or turn on the torch. You can always type the number.','<span class="ms">keyboard</span>Type the reading','btn-secondary'],
+ ['Error · couldn\'t load','','wifi_off','Couldn\'t load the report','Check your connection. Readings saved on this phone are safe.','<span class="ms">refresh</span>Try again','btn-secondary']];
+document.getElementById('empties').innerHTML=E.map(([cap,c,i,h,p,b,k])=>`<div class="st full"><span class="cap">${cap}</span><div class="card" style="width:100%"><div class="empty"><div class="art ${c}"><span class="ms">${i}</span></div><h4>${h}</h4><p>${p}</p>${b?`<span class="btn ${k}">${b}</span>`:''}</div></div></div>`).join('');
+
+// gas cylinder
+document.getElementById('cylSizes').innerHTML=HK_CYL_SIZES.map(z=>`<div style="text-align:center">${hkCylinder({color:'#1976D2',size:z.kg,scale:.62})}<div class="t-num-m" style="margin-top:4px">${z.title}</div><div class="t-caption">${z.use} · ~${z.days} days</div></div>`).join('');
+document.getElementById('cylLevels').innerHTML=[[1,'Full · new','#2E7D32'],[.55,'55% · 26 days','#2E7D32'],[.19,'19% · 9 days','#1976D2'],[.06,'6% · 3 days','#D32F2F'],[0,'Empty','#37474F']].map(([l,t,c])=>`<div style="text-align:center">${hkCylinder({color:c,size:9,level:l,scale:.55})}<div class="t-caption" style="margin-top:4px">${t}</div></div>`).join('')+`<div style="text-align:center">${hkCylinder({size:9,placeholder:true,scale:.55})}<div class="t-caption" style="margin-top:4px">New · placeholder</div></div>`;
+document.getElementById('cylColors').innerHTML=HK_CYL_COLORS.map(([n,h])=>`<div style="display:flex;gap:10px;align-items:center">${hkCylinder({color:h,size:9,mini:true,scale:.2})}<div><b style="font:500 12.5px var(--font);display:block">${n}</b><button class="copy" data-copy="${h}"><code style="font:500 11.5px var(--mono)">${h}</code></button></div></div>`).join('');
+document.getElementById('sizeOpts').innerHTML=HK_CYL_SIZES.map(z=>`<button class="size-opt ${z.kg===9?'is-selected':''} ${z.kg===48?'is-disabled':''}"><span class="sil">${hkCylinder({color:z.kg===9?'#1976D2':'#B8BEC4',size:z.kg,mini:true,scale:.135})}</span><b>${z.title}</b><span>${z.use}</span></button>`).join('');
+document.getElementById('swatches2').innerHTML=HK_CYL_COLORS.map(([n,h],i)=>`<span class="swatch ${i===1?'is-selected':''} ${i===8?'is-disabled':''}" style="background:${h}" title="${n}">${i===1?'<span class="ms">check</span>':''}</span>`).join('');
+const cm=(c,l)=>`<span class="cyl-mini">${hkCylinder({color:c,size:c==='#37474F'?14:9,level:l,mini:true,scale:.157})}</span>`;
+document.getElementById('cylRows').innerHTML=`<div class="list-row" style="background:var(--primary-soft)">${cm('#1976D2',.19)}<div><b>9 kg cylinder</b><span class="sub">Industrial Blue · Afrigas</span><span class="sub">16 Oct – now · 41 days</span><div style="margin-top:4px"><span class="badge b-success">Active · 19% left</span></div></div><div class="num">0.18<small>kg/day est.</small></div></div>
+ <div class="list-row">${cm('#D32F2F',null)}<div><b>9 kg cylinder</b><span class="sub">Propane Red · Easigas</span><span class="sub">29 Aug – 16 Oct · 48 days</span><div style="margin-top:4px"><span class="tag">Finished</span></div></div><div class="num">0.19<small>kg/day</small></div></div>
+ <div class="list-row">${cm('#37474F',null)}<div><b>14 kg cylinder</b><span class="sub">Charcoal Slate · Afrigas</span><span class="sub">7 Jun – 29 Aug · 83 days</span><div style="margin-top:4px"><span class="tag">Finished</span></div></div><div class="num">0.17<small>kg/day</small></div></div>`;
+document.getElementById('cylHome').innerHTML=`<div class="list-row is-pressable">${cm('#1976D2',.19)}<div><b>Gas · 9 kg</b><span class="sub">Industrial Blue · 19% left</span><div class="mini"><i style="width:19%;background:#1976D2"></i></div></div><div class="num">9 d<small>Order by 3 Dec</small></div></div>
+ <div class="list-row is-pressable"><span class="ic ic-gas"><span class="ms fill">propane_tank</span></span><div><b>Gas</b><span class="sub">No cylinder yet · tap to add</span></div><span class="ms muted">chevron_right</span></div>`;
+
+// copy
+document.addEventListener('click',e=>{const b=e.target.closest('[data-copy]');if(!b)return;const v=b.dataset.copy;try{navigator.clipboard.writeText(v)}catch(_){}const t=document.getElementById('toast');document.getElementById('toastTxt').textContent='Copied '+v;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1400)});
+// scrollspy
+const links=[...document.querySelectorAll('.d-side a[href^="#"]')];
+const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting){links.forEach(l=>l.classList.toggle('is-cur',l.getAttribute('href')==='#'+en.target.id))}}),{rootMargin:'-20% 0px -70% 0px'});
+document.querySelectorAll('section.d-sec').forEach(s=>io.observe(s));
+</script>
+</body>
+</html>

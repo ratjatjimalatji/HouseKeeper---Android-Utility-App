@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HouseKeeper Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hk.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);color:var(--text);background:#E4E5EA;min-height:100vh}
+.p-wrap{display:grid;grid-template-columns:260px 1fr 300px;gap:24px;max-width:1280px;margin:0 auto;padding:24px 16px;align-items:start}
+.p-panel{background:var(--surface);border-radius:16px;padding:16px;position:sticky;top:24px;max-height:calc(100vh - 48px);overflow:auto}
+.p-brand{display:flex;gap:10px;align-items:center;margin-bottom:14px}
+.p-brand .logo{width:34px;height:34px;border-radius:10px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center}
+.p-brand b{font:500 15px var(--font);display:block}
+.p-brand a{font:400 11.5px var(--font);color:var(--primary-text)}
+.p-group{margin-top:12px}
+.p-group h6{display:flex;gap:6px;align-items:center;font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text-2);margin:0 6px 4px}
+.p-group h6 .ms{font-size:16px}
+.p-link{display:block;width:100%;text-align:left;border:none;background:none;padding:7px 8px 7px 28px;border-radius:8px;font:400 13.5px var(--font);color:var(--text);cursor:pointer}
+.p-link:hover{background:var(--surface-2)}
+.p-link.is-cur{background:var(--primary-soft);color:var(--primary-text);font-weight:500}
+.p-center{display:flex;flex-direction:column;align-items:center;gap:12px}
+.p-crumb{font:500 12px var(--mono);letter-spacing:.06em;color:var(--text-2);text-transform:uppercase}
+.phone{width:360px;height:780px;border-radius:38px;border:9px solid #111;background:#111;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 18px 40px rgba(0,0,0,.22);position:relative}
+.sb{height:30px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font:500 13px var(--font);background:var(--bg);color:var(--text)}
+.sb .ms{font-size:16px}
+.sb.dark{background:var(--camera);color:#fff}
+.scr{flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column;background:var(--bg)}
+.scr.dark{background:var(--camera)}
+.pbody{flex:1;overflow-y:auto;padding:0 16px 20px;scrollbar-width:none}
+.pbody::-webkit-scrollbar{display:none}
+.gest{height:18px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.gest i{width:108px;height:4px;border-radius:2px;background:var(--text);opacity:.45}
+.snack-wrap{position:absolute;left:12px;right:12px;z-index:30;animation:up .2s var(--ease)}
+@keyframes up{from{transform:translateY(12px);opacity:0}}
+.p-notes h3{font:500 17px var(--font);margin-top:4px}
+.p-notes p{font-size:13.5px;line-height:1.5;color:var(--text-2);margin-top:6px}
+.p-notes h5{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text-2);margin:18px 0 8px}
+.p-notes ul{padding-left:18px;font-size:13px;line-height:1.6;color:var(--text)}
+.p-notes .spec{display:inline-flex;font:500 11px var(--mono);background:var(--surface-2);border-radius:6px;padding:3px 8px;color:var(--text-2)}
+.p-notes .chips .chip{font-size:12px;height:30px}
+/* camera */
+.camtop{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:10px 12px;z-index:2;color:#fff}
+.pill{background:rgba(0,0,0,.55);border-radius:12px;padding:8px 12px;font:500 12px var(--mono);display:flex;gap:6px;align-items:center;cursor:pointer;color:#fff;border:none}
+.utilsw{position:absolute;top:62px;left:0;right:0;display:flex;justify-content:center;gap:6px;z-index:2}
+.utilsw>button{font:500 12px var(--font);padding:6px 12px;border-radius:10px;background:rgba(0,0,0,.5);color:#cfd4d8;display:flex;gap:4px;align-items:center;border:none;cursor:pointer}
+.utilsw>button.is-selected{background:var(--primary);color:var(--on-primary)}
+.meterbox{position:absolute;left:50%;top:170px;transform:translateX(-50%);width:250px;height:120px;border-radius:10px;background:#2b302c;display:grid;place-items:center;box-shadow:inset 0 0 0 3px #3a403b}
+.meterbox.dim{filter:brightness(.45) blur(1.5px)}
+.lcd{background:var(--lcd);color:#1d2419;font:500 34px var(--mono);letter-spacing:3px;padding:8px 12px;border-radius:4px}
+.lcd small{font-size:13px;letter-spacing:0;margin-left:4px}
+.corners{position:absolute;left:50%;top:148px;transform:translateX(-50%);width:290px;height:164px}
+.corners i{position:absolute;width:26px;height:26px;border-color:var(--primary);border-style:solid}
+.corners i:nth-child(1){top:0;left:0;border-width:3px 0 0 3px}.corners i:nth-child(2){top:0;right:0;border-width:3px 3px 0 0}
+.corners i:nth-child(3){bottom:0;left:0;border-width:0 0 3px 3px}.corners i:nth-child(4){bottom:0;right:0;border-width:0 3px 3px 0}
+.corners.scanning i{border-color:#fff;opacity:.7}
+.cpanel{position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-radius:24px 24px 0 0;padding:16px 16px 18px;color:var(--text)}
+.numpad{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:10px 0 2px}
+.numpad button{height:36px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font:500 15px var(--mono);cursor:pointer}
+.numpad button:active{background:var(--surface-2)}
+.dchk{display:flex;justify-content:space-between;align-items:center;gap:8px;border-radius:12px;padding:10px 12px;font:400 12px var(--mono);margin:12px 0}
+.dchk.ok{background:var(--success-soft);color:var(--success)}
+.dchk.warn{background:var(--warning-soft);color:var(--warning)}
+/* misc */
+.qr{width:84px;height:84px;border-radius:6px;border:6px solid var(--surface);outline:1px solid var(--line);background:conic-gradient(from 90deg at 30% 30%,var(--text) 25%,transparent 0) 0 0/18px 18px,var(--surface)}
+.qr.big{width:180px;height:180px;background-size:30px 30px;margin:0 auto}
+.codebig{display:grid;grid-template-columns:1fr 84px;gap:12px;align-items:center}
+.code{font:500 26px var(--mono);color:var(--primary-text);letter-spacing:1px;margin:6px 0}
+.tank{width:56px;height:96px;border-radius:16px 16px 10px 10px;border:2px solid var(--line-strong);position:relative;overflow:hidden;background:var(--surface-2);flex:none}
+.tank>i{position:absolute;left:0;right:0;bottom:0;background:var(--gas);opacity:.85}
+.sharegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.sharegrid button{border:none;background:none;display:flex;flex-direction:column;align-items:center;gap:6px;font:500 12px var(--font);color:var(--text);cursor:pointer}
+.sharegrid .ic{width:52px;height:52px;border-radius:16px;background:var(--surface);border:1px solid var(--line);color:var(--text)}
+.ad{border:1px dashed var(--line-strong);border-radius:var(--r-lg);padding:10px 12px;display:flex;gap:10px;align-items:center;font-size:12.5px;color:var(--text-2);margin-top:12px}
+.grp{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text-2);margin:14px 0 6px}
+@media(max-width:1100px){.p-wrap{grid-template-columns:1fr}.p-panel{position:static;max-height:none}.p-center{order:-1}}
+@media(max-width:400px){.phone{transform:scale(.9);transform-origin:top center}}
+</style>
+</head>
+<body>
+<div class="p-wrap">
+  <aside class="p-panel" id="menu"></aside>
+  <div class="p-center">
+    <div class="p-crumb" id="crumb"></div>
+    <div class="phone">
+      <div class="sb" id="sb"><span>18:42</span><span><span class="ms" id="netIcon">signal_cellular_alt</span> <span class="ms">battery_5_bar</span></span></div>
+      <div class="scr" id="scr"></div>
+      <div class="gest"><i></i></div>
+    </div>
+  </div>
+  <aside class="p-panel p-notes" id="notes"></aside>
+</div>
+
+<script src="hk-cylinder.js"></script>
+<script>
+/* ================= STATE ================= */
+const S = {
+  screen:'home', stack:[], v:null, data:'full', online:true,
+  util:'elec', rUtil:'elec', month:'Nov', bar:null, overlay:null, snack:null,
+  elecLeft:36.2, rate:12.5, 
+  cyls:[
+    {id:'c3',size:9,color:'#1976D2',active:true,bought:'2026-10-14',start:'2026-10-16',end:null,supplier:'Afrigas Pretoria East',price:329,notes:'Kitchen stove',by:'Sipho'},
+    {id:'c2',size:9,color:'#D32F2F',active:false,bought:'2026-08-27',start:'2026-08-29',end:'2026-10-16',supplier:'Easigas Hatfield',price:315,notes:'',by:'You'},
+    {id:'c1',size:14,color:'#37474F',active:false,bought:'2026-06-05',start:'2026-06-07',end:'2026-08-29',supplier:'Afrigas Pretoria East',price:495,notes:'Winter: stove + heater',by:'Naledi'}],
+  cylsEmpty:[], cylPage:1, draft:null, svcOpen:false, cylPop:true,
+  activity:[
+    {who:'NM',c:'av-green',name:'Naledi',text:'logged <b>3 733.4 kWh</b>',sub:'Electricity reading',when:'2 h ago',ic:'bolt'},
+    {who:'NM',c:'av-green',name:'Naledi',text:'topped up <b>120 kWh</b> for R350',sub:'Prepaid electricity',when:'Yesterday',ic:'add_card'},
+    {who:'SM',c:'av-water',name:'Sipho',text:'logged <b>1 284.6 m³</b>',sub:'Water reading',when:'Sat',ic:'water_drop'}],
+  code:'HK-4F7Q2', req:true, house:'Pretoria Home',
+  model:'7-SEGMENT', torch:false, editIdx:null, digits:null,
+  manual:'', topAmt:'', topUnits:'', join:'', joinErr:false,
+  exportFmt:'PDF', period:0, order:null, size:'9 kg', supplier:null, supPrice:329,
+  sug:null, busy:null,
+  notif:{buy:true,gas:true,nudge:false,anom:true,summary:true}, ocr:1,
+  readings:{
+    elec:[{v:3733.4,t:'Today 16:40',by:'Naledi',s:'ok'},{v:3722.2,t:'Yesterday 19:05',by:'You',s:'ok'},{v:3710.9,t:'Mon 26 Nov',by:'Sipho',s:'ok'},{v:3698.6,t:'Sun 25 Nov',by:'You',s:'ok'},{v:3686.0,t:'Sat 24 Nov',by:'Naledi',s:'ok'}],
+    water:[{v:1284.6,t:'Sat 24 Nov',by:'Sipho',s:'ok'},{v:1283.3,t:'Wed 21 Nov',by:'You',s:'ok'},{v:1281.9,t:'Sun 18 Nov',by:'Naledi',s:'ok'}]
+  },
+  members:[['LM','Lerato (you)','Owner','av-amber',''],['NM','Naledi','Admin','av-green','Logged electricity 2 h ago'],['SM','Sipho','Member','av-water',''],['GM','Gogo','Viewer','av-gas','Polokwane']],
+};
+const U = {
+  elec:{name:'Electricity',icon:'bolt',unit:'kWh',ic:'ic-elec',scan:'03745.6',digits:['3','7','4','5','.','6'],unsure:2,read:3745.6},
+  water:{name:'Water',icon:'water_drop',unit:'m³',ic:'ic-water',scan:'01285.9',digits:['1','2','8','5','.','9'],unsure:3,read:1285.9},
+  gas:{name:'Gas',icon:'propane_tank',unit:'kg',ic:'ic-gas'}
+};
+const REP = {
+  elec:{n7:['87.5','kWh'],me:['386','kWh'],d:['up','4% vs Oct'],cost:'R1 080',so:'R642 so far',based:['14','readings'],tariff:'R2.89 / kWh',conf:['b-success','High confidence'],
+    daily:[55,58,52,60,57,62,50,56,59,61,54,58,57,60,55,57,88,92,85,60,58,56,59,57,58],unitDay:'kWh',avg:'12.5',scale:18,
+    anom:'<b>Spike 17–19 Nov, +28%.</b> Matches a geyser left on. Cooler weather explains about 6% of it.',sug:['Put the geyser on a timer','~R180/month','Weekday mornings (6–8 a.m.) use 40% more than weekends. Based on 6 weeks of readings.']},
+  water:{n7:['2.9','m³'],me:['12.8','m³'],d:['down','3% vs Oct'],cost:'R410',so:'R214 so far',based:['6','readings'],tariff:'R32.10 / m³',conf:['b-warning','Medium confidence'],
+    daily:[40,42,45,41,44,43,40,46,42,41,43,45,44,42,41,43,44,42,40,45,43,41,42,44,43],unitDay:'m³',avg:'0.42',scale:0.8,
+    anom:'<b>No unusual water use this month.</b> Night-time use stays flat, so a leak is unlikely.',sug:['Shorter garden watering','~R60/month','Saturday use is double the weekday average. Watering before 8 a.m. loses less to evaporation.']},
+  gas:{n7:['1.4','kg'],me:['6.1','kg'],d:['up','2% vs Oct'],cost:'R240',so:'Per 9 kg: R329',based:['2','swaps'],tariff:'R33.10 / kg',conf:['b-neutral','Low confidence'],
+    daily:[30,30,30,30,30,30,30,32,32,32,32,32,32,32,31,31,31,31,31,31,31,33,33,33,33],unitDay:'kg',avg:'0.2',scale:0.6,
+    anom:'<b>Estimated from cylinder swaps.</b> Gas use is spread evenly between swaps, so daily changes aren\'t shown.',sug:['Lid on the pot','~R40/month','Cooking takes most of your gas. A lid cuts boiling time by about a third.']}
+};
+const TAB = {home:0,reports:1,household:3,settings:4};
+
+/* ================= HELPERS ================= */
+const $ = s=>document.querySelector(s);
+const fmt = n=>n.toLocaleString('en-ZA',{minimumFractionDigits:1,maximumFractionDigits:1}).replace(',', '.');
+const days = ()=>S.elecLeft/S.rate;
+const icon=(n,c='')=>`<span class="ms ${c}">${n}</span>`;
+const TODAY='2026-11-26';
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const dOf=s=>new Date(s+'T00:00:00');
+const daysBetween=(a,b)=>Math.round((dOf(b)-dOf(a))/864e5);
+const fmtDate=s=>{const d=dOf(s);return d.getDate()+' '+MON[d.getMonth()]};
+const addDays=(s,n)=>{const d=dOf(s);d.setDate(d.getDate()+n);const w=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];return w+' '+d.getDate()+' '+MON[d.getMonth()]};
+const colorName=hex=>(HK_CYL_COLORS.find(c=>c[1]===hex)||['Custom'])[0];
+const cylList=()=>S.data==='empty'?S.cylsEmpty:S.cyls;
+const sortedCyls=()=>cylList().slice().sort((a,b)=>(b.active-a.active)||(dOf(b.start)-dOf(a.start)));
+const activeCyl=()=>cylList().find(c=>c.active);
+const cylDays=c=>Math.max(0,daysBetween(c.start,c.end||TODAY));
+const gasRate=()=>{const f=cylList().filter(c=>!c.active&&cylDays(c)>0);return f.length?f.reduce((a,c)=>a+c.size/cylDays(c),0)/f.length:.18};
+const gasProj=c=>c.active?hkGasProjection(c,gasRate(),cylDays(c)):{leftKg:0,level:0,daysLeft:0};
+const activityRow=a=>`<div class="activity-row"><span class="av sm ${a.c}">${a.who}</span><div class="what">${a.name} ${a.text}<span class="sub">${a.sub}</span></div><span class="when">${a.when}</span></div>`;
+const logActivity=(text,sub,ic)=>S.activity.unshift({who:'LM',c:'av-amber',name:'You',text,sub,when:'Just now',ic});
+const cylMini=(c,lvl)=>`<span class="cyl-mini">${hkCylinder({color:c.color,size:c.size,level:lvl,mini:true,scale:.157})}</span>`;
+const pending = ()=>Object.values(S.readings).flat().filter(r=>r.s==='wait').length;
+const gaugeHTML=(n,cls)=>`<div class="gauge ${cls}">${Array.from({length:20},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</div>`;
+const appbar=(title,right='')=>`<div class="appbar"><div class="lead"><span class="icon-btn bare" data-act="back">${icon('arrow_back')}</span><span class="title">${title}</span></div><div style="display:flex;gap:6px">${right}</div></div>`;
+const tabbar=title=>`<div class="appbar"><span class="title">${title}</span>`;
+const navbar=a=>`<div class="navbar">
+ <div class="${a==0?'is-active':''}" data-go="home">${icon('space_dashboard')}Home</div>
+ <div class="${a==1?'is-active':''}" data-go="reports">${icon('monitoring')}Reports</div>
+ <div><button class="fab-scan" data-go="scan" aria-label="Scan a meter">${icon('document_scanner')}</button></div>
+ <div class="${a==3?'is-active':''}" data-go="household">${icon('group')}Household</div>
+ <div class="${a==4?'is-active':''}" data-go="settings">${icon('settings')}Settings</div></div>`;
+const empty=(i,h,p,btn='',art='')=>`<div class="empty"><div class="art ${art}">${icon(i)}</div><h4>${h}</h4><p>${p}</p>${btn}</div>`;
+const offlineBanner=()=>!S.online?`<div class="banner banner-offline" style="margin-bottom:10px">${icon('cloud_off')}<span class="grow">You're offline${pending()?` · ${pending()} reading${pending()>1?'s':''} waiting to sync`:''}</span></div>`:(pending()?`<div class="banner banner-info" style="margin-bottom:10px">${icon('sync')}<span class="grow">Syncing ${pending()} reading${pending()>1?'s':''}…</span></div>`:'');
+const sk=(w,h,extra='')=>`<div class="sk" style="width:${w};height:${h}px;${extra}"></div>`;
+const btn=(cls,ic,label,act,busyLabel)=>S.busy===act?`<button class="btn ${cls} is-loading"><span class="spin"></span>${busyLabel}</button>`:`<button class="btn ${cls}" data-act="${act}">${ic?icon(ic):''}${label}</button>`;
+
+/* ================= SCREENS ================= */
+const SCREENS = {
+
+home(){
+  if(S.data==='loading') return {nav:0,body:`<div class="appbar">${sk('140px',16)}${sk('40px',40,'border-radius:12px')}</div><div class="pbody">
+    <div class="tiles">${[1,2,3].map(()=>`<div class="tile"><span class="sk" style="width:36px;height:36px;border-radius:11px"></span>${sk('60px',11,'margin-top:4px')}${sk('40px',9)}</div>`).join('')}</div>
+    <div class="hero" style="margin-top:10px">${sk('110px',11)}${sk('150px',48,'margin:10px 0 8px')}${sk('240px',11)}${sk('100%',12,'margin:14px 0')}${sk('100%',44,'border-radius:12px')}</div>
+    <div class="card flush" style="margin-top:10px">${[1,2,3].map(()=>`<div class="list-row"><span class="sk" style="width:34px;height:34px;border-radius:10px"></span><div>${sk('120px',12)}${sk('80px',10,'margin-top:6px')}</div>${sk('40px',16)}</div>`).join('')}</div></div>`};
+  const head=`<div class="appbar"><div class="hh-switch" data-act="houseSheet"><span>${S.house} ${icon('expand_more','sm muted')}</span><small>${S.data==='empty'?'1 MEMBER':'4 MEMBERS'} · ${S.online?(pending()?'SYNCING':'SYNCED'):'OFFLINE'}</small></div><span class="icon-btn" data-go="notifications">${icon('notifications')}${S.data==='full'?'<i class="dot"></i>':''}</span></div>`;
+  if(S.data==='empty') return {nav:0,body:head+`<div class="pbody">${offlineBanner()}
+    <div class="tiles">
+      <div class="tile" data-go="scan" data-util="elec"><span class="ic ic-elec">${icon('bolt','fill')}</span><b>Electricity</b><span>No readings</span></div>
+      <div class="tile" data-go="scan" data-util="water"><span class="ic ic-water">${icon('water_drop','fill')}</span><b>Water</b><span>No readings</span></div>
+      <div class="tile" data-go="gas"><span class="ic ic-gas">${icon('propane_tank','fill')}</span><b>Gas</b><span>No cylinder</span></div></div>
+    <div class="card" style="margin-top:10px">${empty('bolt','Log your first reading','Point the camera at your electricity meter. After 3 readings we can tell you when units will run out.',`<button class="btn btn-primary" data-go="scan" data-util="elec">${icon('document_scanner')}Scan electricity meter</button>`,'amber')}</div>
+    <div class="card" style="margin-top:10px;display:flex;gap:12px;align-items:center" data-go="household"><span class="ic ic-neutral">${icon('group_add')}</span><div style="flex:1"><b class="t-title" style="font-size:14px">Invite your household</b><div class="t-caption">Share code ${S.code} so others can log too</div></div>${icon('chevron_right','muted')}</div>
+  </div>`};
+  const d=days(), crit=d<3, ok=d>=7, n=Math.max(1,Math.min(20,Math.round(d/14*20)));
+  const lastE=S.readings.elec[0], lastW=S.readings.water[0];
+  return {nav:0,body:head+`<div class="pbody">${offlineBanner()}
+    <div class="tiles">
+      <div class="tile" data-go="scan" data-util="elec"><span class="ic ic-elec">${icon('bolt','fill')}</span><b>Electricity</b><span>${lastE.by==='You'?'Just now':'2 h ago'}</span></div>
+      <div class="tile" data-go="scan" data-util="water"><span class="ic ic-water">${icon('water_drop','fill')}</span><b>Water</b><span>${lastW.by==='You'&&lastW.t.startsWith('Today')?'Just now':'3 days ago'}</span></div>
+      <div class="tile" data-go="gas"><span class="ic ic-gas">${icon('propane_tank','fill')}</span><b>Gas</b><span>${activeCyl()?'Swapped '+fmtDate(activeCyl().start):'No cylinder'}</span></div></div>
+    <div class="hero ${crit?'is-critical':ok?'is-ok':''}" style="margin-top:10px">
+      <div style="display:flex;justify-content:space-between"><span class="t-label">Electricity left</span><span class="link" data-go="usage" data-util="elec">Details</span></div>
+      <div class="t-display">${fmt(d)}<small>days</small></div>
+      <div class="t-caption">${fmt(S.elecLeft)} kWh at ${S.rate} kWh/day · ${crit?'empty around Thu 29 Nov':'lasts until about '+(ok?'Sat 8 Dec':'Mon 3 Dec')}</div>
+      ${gaugeHTML(n,crit?'is-low':ok?'is-ok':'')}
+      <div class="btn-row">${crit?`<button class="btn btn-primary" data-act="buy">${icon('open_in_new')}Buy electricity</button>`:''}<button class="btn btn-secondary" data-go="topup">${icon('add')}${crit?'Top-up':'Log top-up'}</button></div>
+    </div>
+    <div class="card flush" style="margin-top:10px">
+      ${gasHomeRow()}
+      <div class="list-row is-pressable" data-go="usage" data-util="water"><span class="ic ic-water">${icon('water_drop','fill')}</span><div><b>Water</b><span class="sub">Last ${fmt(lastW.v)} m³ · ${lastW.by}</span><div class="mini"><i style="width:64%;background:var(--water)"></i></div></div><div class="num">0.42<small>m³/day</small></div></div>
+      <div class="list-row is-pressable" data-go="reports"><span class="ic ic-ok">${icon('payments')}</span><div><b>November</b><span class="sub">Month-end est. R 1 080</span></div><div class="num">R642<small class="c-up">+4% vs Oct</small></div></div>
+    </div>
+    <div class="section-h"><span class="t-label">Recent activity</span><span class="link" data-go="activity">See all</span></div>
+    <div class="card flush is-pressable" data-go="activity">${S.activity.slice(0,3).map(activityRow).join('')}</div>
+  </div>`};
+},
+
+scan(){
+  const u=U[S.util]; const v=S.v||'detected';
+  const dg=S.digits||u.digits.slice();
+  const val=parseFloat(dg.join('')); const last=S.readings[S.util][0].v; const diff=val-last;
+  let panel;
+  if(v==='scanning') panel=`<div class="t-label" style="text-align:center">Looking for digits…</div>
+    <div class="digits is-scanning" style="margin:10px 0 6px">${u.digits.map(c=>c=='.'?'<span class="dp">.</span>':'<span>0</span>').join('')}</div>
+    <div class="t-caption" style="text-align:center;margin-bottom:14px">Hold steady over the display.</div>
+    <div class="btn-row"><button class="btn btn-secondary" data-go="manual">${icon('keyboard')}Type</button><button class="btn btn-primary" disabled style="flex:2">${icon('check')}Save</button></div>`;
+  else if(v==='nothing') panel=`<div class="empty" style="padding:4px 8px 8px"><h4>Can't find a reading</h4><p>Move closer, avoid glare, or turn on the torch. You can always type the number.</p></div>
+    <div class="btn-row"><button class="btn btn-secondary" data-act="torch">${icon(S.torch?'flashlight_off':'flashlight_on')}${S.torch?'Torch off':'Torch on'}</button><button class="btn btn-primary" data-go="manual" style="flex:2">${icon('keyboard')}Type the reading</button></div>`;
+  else {
+    const unsureLeft = S.digits==null;
+    panel=`<div class="t-label" style="text-align:center">Reading · ${u.unit}</div>
+    <div class="digits" style="margin:10px 0 6px">${dg.map((c,i)=>c=='.'?'<span class="dp">.</span>':`<span data-act="digit" data-i="${i}" class="${S.editIdx===i?'is-editing':(unsureLeft&&i===u.unsure)?'is-unsure':(S.digits&&S.digits[i]!==u.digits[i])?'is-edited':''}">${c}</span>`).join('')}</div>
+    ${S.editIdx!=null?`<div class="numpad">${[1,2,3,4,5,6,7,8,9,0].map(n=>`<button data-act="setdigit" data-n="${n}">${n}</button>`).join('')}</div>`:`<div class="t-caption" style="text-align:center">${unsureLeft?'Not sure about one digit. Tap it to change.':'Digit checked. Tap any digit to change it.'}</div>`}
+    <div class="dchk ${diff<0?'warn':'ok'}"><span>since ${S.readings[S.util][0].by==='You'?'your last':S.readings[S.util][0].by}</span><b>${diff<0?'Lower than last · top-up?':(diff>=0?'+':'')+fmt(diff)+' '+u.unit+' · normal'}</b></div>
+    <div class="btn-row"><button class="btn btn-secondary" data-go="manual">${icon('keyboard')}Type</button>${S.busy==='saveScan'?`<button class="btn btn-primary is-loading" style="flex:2"><span class="spin"></span>Saving…</button>`:`<button class="btn btn-primary" data-act="saveScan" style="flex:2">${icon('check')}Save ${fmt(val)}</button>`}</div>`;
+  }
+  return {dark:true,body:`<div class="camtop"><button class="pill" data-act="back" aria-label="Close">${icon('close','sm')}</button><button class="pill" data-act="model">${icon('memory','xs')}<span style="color:#fff">${S.model} MODEL</span></button><button class="pill" data-act="torch" aria-label="Torch">${icon(S.torch?'flashlight_off':'flashlight_on','sm')}</button></div>
+    <div class="utilsw"><button class="${S.util=='elec'?'is-selected':''}" data-act="sutil" data-u="elec">${icon('bolt','fill xs')}Electricity</button><button class="${S.util=='water'?'is-selected':''}" data-act="sutil" data-u="water">${icon('water_drop','fill xs')}Water</button></div>
+    <div class="meterbox ${v==='nothing'&&!S.torch?'dim':''}" style="${S.torch?'box-shadow:inset 0 0 0 3px #3a403b,0 0 80px rgba(255,255,220,.35)':''}"><div class="lcd">${u.scan}<small>${u.unit}</small></div></div>
+    <div class="corners ${v!=='detected'?'scanning':''}"><i></i><i></i><i></i><i></i></div>
+    <div class="cpanel">${panel}</div>`};
+},
+
+manual(){
+  const u=U[S.util]; const last=S.readings[S.util][0];
+  return {body:appbar('Type a reading')+`<div class="pbody">
+    <div class="seg" style="margin-bottom:16px"><button class="${S.util=='elec'?'is-selected':''}" data-act="mutil" data-u="elec">${icon('bolt','fill xs')}Electricity</button><button class="${S.util=='water'?'is-selected':''}" data-act="mutil" data-u="water">${icon('water_drop','fill xs')}Water</button></div>
+    <div class="field"><label class="field-label" for="mIn">${u.name} reading</label>
+      <label class="input input-num" id="mBox"><input id="mIn" inputmode="decimal" placeholder="${fmt(last.v)}" value="${S.manual}" autocomplete="off"><span class="unit">${u.unit}</span></label>
+      <span id="mHelp"></span></div>
+    <div class="card flush" style="margin-top:16px">
+      <div class="setting-row"><span class="ic ic-neutral">${icon('schedule')}</span><div class="grow"><b>When</b><span class="t-caption">Now · today 18:42</span></div><span class="link">Change</span></div>
+      <div class="setting-row"><span class="ic ic-neutral">${icon('photo_camera')}</span><div class="grow"><b>Keep a photo</b><span class="t-caption">Proof for billing disputes</span></div><button class="switch" data-act="toggleEl"></button></div>
+    </div>
+    <div style="margin-top:20px" id="mSave"></div>
+  </div>`, after:updateManual};
+},
+
+topup(){
+  const units=parseFloat(S.topUnits)||0;
+  return {body:appbar('Log a top-up')+`<div class="pbody">
+    <div class="banner banner-info" style="margin-bottom:16px">${icon('info')}<span class="grow">Logging a top-up stops it looking like negative usage, and updates the run-out date for all 4 members.</span></div>
+    <div class="field"><label class="field-label" for="tAmt">Amount paid</label><label class="input"><span class="muted" style="font:500 16px var(--mono)">R</span><input id="tAmt" inputmode="decimal" placeholder="350" value="${S.topAmt}" style="font:500 18px var(--mono)"></label></div>
+    <div class="field" style="margin-top:14px"><label class="field-label" for="tUnits">Units received</label><label class="input"><input id="tUnits" inputmode="decimal" placeholder="120.0" value="${S.topUnits}" style="font:500 18px var(--mono)"><span class="unit">kWh</span></label><span class="field-help">${icon('history')}Last top-up: R350 for 120 kWh, Naledi yesterday</span></div>
+    <div class="card" style="margin-top:16px" id="tPrev">${topPreview(units)}</div>
+    <div style="margin-top:20px" id="tSave">${topSaveBtn(units)}</div>
+  </div>`, after:bindTopup};
+},
+
+usage(){
+  const u=U[S.util]; const isE=S.util==='elec'; const r=REP[S.util];
+  if(S.data==='empty') return {body:appbar(u.name)+`<div class="pbody">
+    <div class="hero"><div class="t-label">${isE?'Electricity left':'Daily water use'}</div><div style="display:flex;gap:12px;align-items:center;margin:12px 0"><span class="ic ic-neutral" style="width:44px;height:44px">${icon('hourglass_top')}</span><div><div class="t-title">Needs 2 more readings</div><div class="t-caption">We'll ${isE?'predict the run-out date':'show daily use'} after 3 readings, a day apart.</div></div></div><div class="progress"><i style="width:33%"></i></div><div class="t-caption" style="margin-top:6px">1 of 3 readings</div></div>
+    <div class="card" style="margin-top:10px">${empty('bar_chart','No daily usage yet','Daily bars appear once there are 2 readings on different days.',`<button class="btn btn-primary" data-go="scan" data-util="${S.util}">${icon('document_scanner')}Scan ${u.name.toLowerCase()} meter</button>`)}</div></div>`};
+  const d=days(), crit=d<3, ok=d>=7;
+  const top = isE?`<div class="hero ${crit?'is-critical':ok?'is-ok':''}"><div class="t-label">Electricity left</div><div class="t-display">${fmt(d)}<small>days</small></div><div class="t-caption">${fmt(S.elecLeft)} kWh at ${S.rate} kWh/day over the last 7 days</div>${gaugeHTML(Math.max(1,Math.min(20,Math.round(d/14*20))),crit?'is-low':ok?'is-ok':'')}<div class="btn-row">${crit?`<button class="btn btn-primary" data-act="buy">${icon('open_in_new')}Buy electricity</button>`:''}<button class="btn btn-secondary" data-go="topup">${icon('add')}Top-up</button></div></div>`
+  : `<div class="stat-grid"><div><span class="t-label">Per day</span><b class="t-num-l">0.42 <small>m³</small></b><span class="delta muted">≈ 420 litres</span></div><div><span class="t-label">This month</span><b class="t-num-l">6.7 <small>m³</small></b><span class="delta c-down">${icon('south')}3% vs Oct</span></div></div>`;
+  return {body:appbar(u.name,`<span class="icon-btn" data-go="history">${icon('history')}</span>`)+`<div class="pbody">${top}${chartCard(S.util)}
+    <div class="section-h"><span class="t-label">Latest readings</span><span class="link" data-go="history">See all</span></div>
+    <div class="card flush">${S.readings[S.util].slice(0,3).map(r=>readingRow(r)).join('')}</div></div>`};
+},
+
+history(){
+  const u=U[S.util];
+  const list=S.data==='empty'?`<div class="card" style="margin-top:12px">${empty('history','No readings yet','Readings anyone in the household logs will appear here, newest first.')}</div>`
+    :`<div class="card flush" style="margin-top:12px">${S.readings[S.util].map((r,i)=>readingRow(r,i,true)).join('')}</div>
+     <div class="ad"><span class="tag">Ad</span><span style="flex:1">Geyser timers from R399, installed. Sponsored by a local electrician.</span></div>`;
+  return {body:appbar('Reading history',`<span class="icon-btn" data-act="exportSheet">${icon('ios_share')}</span>`)+`<div class="pbody">
+    <div class="seg"><button class="${S.util=='elec'?'is-selected':''}" data-act="hutil" data-u="elec">${icon('bolt','fill xs')}Electricity</button><button class="${S.util=='water'?'is-selected':''}" data-act="hutil" data-u="water">${icon('water_drop','fill xs')}Water</button></div>${list}</div>`};
+},
+
+reports(){
+  const r=REP[S.rUtil];
+  const head=`<div class="appbar"><span class="title">Reports</span><div style="display:flex;gap:6px"><span class="icon-btn" data-act="periodSheet" aria-label="Custom period">${icon('date_range')}</span><span class="icon-btn" data-act="exportSheet" aria-label="Export">${icon('ios_share')}</span></div></div>`;
+  const seg=`<div class="tiles">${['elec','water','gas'].map(k=>`<div class="tile ${S.rUtil==k?'is-selected':''}" data-act="rutil" data-u="${k}" role="tab" aria-selected="${S.rUtil==k}"><span class="ic ${U[k].ic}">${icon(U[k].icon,'fill')}</span><b>${U[k].name}</b><span class="val">${S.data==='empty'?'—':REP[k].me[0]+' '+REP[k].me[1]}</span></div>`).join('')}</div>
+    <div class="chips" style="margin-top:10px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${['Nov','Oct','Sep'].map(m=>`<span class="chip ${S.month==m?'is-selected':''}" data-act="month" data-m="${m}">${m} 2026</span>`).join('')}<span class="chip" data-act="periodSheet">${icon('event','xs')}Custom</span></div>`;
+  if(S.data==='loading') return {nav:1,body:head+`<div class="pbody"><div class="tiles">${[1,2,3].map(()=>`<div class="tile"><span class="sk" style="width:36px;height:36px;border-radius:11px"></span>${sk('60px',11,'margin-top:4px')}${sk('46px',9)}</div>`).join('')}</div><div style="display:flex;gap:6px;margin-top:10px">${sk('80px',32)}${sk('80px',32)}${sk('80px',32)}</div>
+    <div class="stat-grid" style="margin-top:10px">${[1,2,3,4].map(()=>`<div>${sk('70px',10)}${sk('90px',20,'margin-top:8px')}${sk('60px',10,'margin-top:6px')}</div>`).join('')}</div>
+    <div class="card" style="margin-top:10px">${sk('120px',11)}<div style="display:flex;align-items:flex-end;gap:3px;height:104px;margin-top:10px">${Array.from({length:30},(_,i)=>`<span class="sk" style="flex:1;height:${40+((i*37)%45)}%;border-radius:3px 3px 0 0"></span>`).join('')}</div></div></div>`};
+  if(S.data==='empty') return {nav:1,body:head+`<div class="pbody">${seg}
+    <div class="stat-grid" style="margin-top:10px"><div><span class="t-label">Next 7 days</span><b class="t-num-l faint">—</b><span class="badge b-neutral" style="margin-top:4px">Not enough data</span></div><div><span class="t-label">Month-end use</span><b class="t-num-l faint">—</b><span class="delta muted">Needs 3 readings</span></div><div><span class="t-label">Month-end cost</span><b class="t-num-l faint">—</b><span class="delta muted">Set a tariff</span></div><div><span class="t-label">Based on</span><b class="t-num-l">1 <small>reading</small></b><span class="delta muted">Today</span></div></div>
+    <div class="card" style="margin-top:10px">${empty('monitoring','Reports need a few more readings','You have 1 reading this month. Log 2 more, a day apart, to see daily usage and a month-end estimate.',`<button class="btn btn-primary" data-go="scan" data-util="${S.rUtil==='water'?'water':'elec'}">${icon('document_scanner')}Log a reading</button>`)}</div></div>`};
+  return {nav:1,body:head+`<div class="pbody">${offlineBanner()}${seg}
+    <div class="stat-grid" style="margin-top:10px">
+      <div><span class="t-label">Next 7 days</span><b class="t-num-l">${r.n7[0]} <small>${r.n7[1]}</small></b><span class="badge ${r.conf[0]}" style="margin-top:4px">${r.conf[0]=='b-success'?icon('verified','fill'):''}${r.conf[1]}</span></div>
+      <div><span class="t-label">Month-end use</span><b class="t-num-l">${r.me[0]} <small>${r.me[1]}</small></b><span class="delta ${r.d[0]=='up'?'c-up':'c-down'}">${icon(r.d[0]=='up'?'north':'south')}${r.d[1]}</span></div>
+      <div><span class="t-label">Month-end cost</span><b class="t-num-l">${r.cost}</b><span class="delta muted">${r.so}</span></div>
+      <div><span class="t-label">Based on</span><b class="t-num-l">${r.based[0]} <small>${r.based[1]}</small></b><span class="delta muted">${r.tariff}</span></div>
+    </div>
+    ${chartCard(S.rUtil,true)}
+    <div class="card" style="margin-top:10px">
+      <div style="display:flex;gap:10px"><span class="ic" style="background:var(--info-soft);color:var(--info)">${icon('lightbulb')}</span><div style="flex:1"><b class="t-title" style="font-size:14px">${r.sug[0]}</b> <span class="badge b-success">${r.sug[1]} est.</span><p class="t-body-sm muted" style="margin-top:4px">${r.sug[2]}</p></div></div>
+      ${S.sug?`<div class="banner banner-success" style="margin-top:10px">${icon('check')}<span class="grow">Thanks. We'll use this to tune your suggestions.</span></div>`:`<div class="chips" style="margin-top:10px"><span class="chip" data-act="sug">Helpful</span><span class="chip" data-act="sug">Not relevant</span><span class="chip" data-act="sug">Already doing this</span></div>`}
+    </div>
+    <div class="btn-row" style="margin-top:10px"><button class="btn btn-secondary" data-act="periodSheet">${icon('event')}Custom period</button><button class="btn btn-secondary" data-act="exportSheet">${icon('picture_as_pdf')}Export</button></div>
+    <div class="ad"><span class="tag">Ad</span><span style="flex:1">Save on geyser costs with a solar geyser blanket. Sponsored.</span></div>
+  </div>`};
+},
+
+household(){
+  if(S.data==='loading') return {nav:3,body:`<div class="appbar"><span class="title">Household</span></div><div class="pbody"><div class="card">${sk('70px',10)}${sk('160px',26,'margin:10px 0')}${sk('100px',10)}</div><div class="card flush" style="margin-top:10px">${[1,2,3,4].map(()=>`<div class="list-row"><span class="sk" style="width:36px;height:36px;border-radius:10px"></span>${sk('110px',12)}${sk('50px',18)}</div>`).join('')}</div></div>`};
+  const codeCard=`<div class="card"><div class="codebig"><div><span class="t-label">Join code</span><div class="code">${S.code}</div><span class="t-caption">Approval required</span></div><div class="qr" data-act="shareSheet" style="cursor:pointer"></div></div>
+    <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" data-act="shareSheet">${icon('share')}Share</button><button class="btn btn-secondary" data-act="newCode">${icon('refresh')}New code</button></div></div>`;
+  if(S.data==='empty') return {nav:3,body:`<div class="appbar"><span class="title">Household</span><span class="icon-btn" data-go="join">${icon('group_add')}</span></div><div class="pbody">
+    <div class="card">${empty('group_add',`Share ${S.house}`,'Invite the people you live with so anyone can log a reading and everyone gets run-out reminders.','','amber')}
+    <div style="text-align:center"><div class="code" style="margin:0 0 12px">${S.code}</div><button class="btn btn-primary btn-block" data-act="shareSheet">${icon('share')}Share join code</button></div></div>
+    <div class="card flush" style="margin-top:10px"><div class="list-row"><span class="av av-amber">LM</span><div><b>Lerato (you)</b></div><span class="tag is-accent">Owner</span></div></div>
+    <button class="btn btn-ghost btn-block" style="margin-top:10px" data-go="join">${icon('login')}Join another household with a code</button></div>`};
+  return {nav:3,body:`<div class="appbar"><span class="title">Household</span><div style="display:flex;gap:6px"><span class="icon-btn" data-go="activity" aria-label="Activity">${icon('timeline')}</span><span class="icon-btn" data-go="join" aria-label="Join">${icon('group_add')}</span></div></div><div class="pbody">${codeCard}
+    ${S.req?`<div class="alert" style="margin-top:10px"><div style="display:flex;justify-content:space-between"><span class="t-label" style="color:var(--elec)">Join request</span><span class="t-label">20 min</span></div><div class="t-title" style="font-size:15px;margin-top:6px">Thabo M. wants to join</div><div class="btn-row" style="margin-top:10px">${S.busy==='approve'?'<button class="btn btn-secondary btn-sm is-disabled">Decline</button>':'<button class="btn btn-secondary btn-sm" data-act="decline">Decline</button>'}${btn('btn-primary btn-sm','','Approve as member','approve','Approving…')}</div></div>`:''}
+    <div class="section-h"><span class="t-label">Members · ${S.members.length}</span><span class="link" data-go="activity">Activity</span></div>
+    <div class="card flush">${S.members.map(m=>`<div class="list-row is-pressable" data-act="member" data-n="${m[1]}"><span class="av ${m[3]}">${m[0]}</span><div><b>${m[1]}</b>${m[4]?`<span class="sub">${m[4]}</span>`:''}</div><span class="tag ${m[2]=='Owner'?'is-accent':''}">${m[2]}</span></div>`).join('')}</div>
+  </div>`};
+},
+
+join(){
+  const v=S.v||'enter';
+  if(v==='waiting') return {body:appbar('Join a household')+`<div class="pbody"><div class="card" style="margin-top:20px">${empty('hourglass_top','Request sent','We\'ve asked the owner of <b>Pretoria Home</b> to approve you. You\'ll get a notification when they do.','','amber')}<div class="progress is-indeterminate" style="margin:0 16px 16px"><i></i></div></div>
+    <button class="btn btn-secondary btn-block" style="margin-top:12px" data-act="cancelJoin">Cancel request</button>
+    <button class="btn btn-ghost btn-block" style="margin-top:4px" data-act="approvedSim">${icon('notifications_active')}Simulate: owner approves</button></div>`};
+  return {body:appbar('Join a household')+`<div class="pbody">
+    <p class="t-body muted" style="margin:4px 0 18px">Ask someone in the household for their code. It looks like <b style="font-family:var(--mono);color:var(--text)">HK-4F7Q2</b>.</p>
+    <div class="field"><label class="field-label" for="jIn">Join code</label><label class="input ${S.joinErr?'is-error':''}" id="jBox"><input id="jIn" value="${S.join}" placeholder="HK-" autocomplete="off" style="font:500 20px var(--mono);letter-spacing:1px;text-transform:uppercase"></label><span id="jHelp">${S.joinErr?`<span class="field-error">${icon('error')}Codes have 5 characters after HK-.</span>`:'<span class="field-help">Letters and numbers only.</span>'}</span></div>
+    <div style="margin-top:18px" id="jBtn"></div>
+    <div class="t-caption" style="text-align:center;margin:16px 0 8px">or</div>
+    <button class="btn btn-secondary btn-block">${icon('qr_code_scanner')}Scan a QR code</button></div>`, after:bindJoin};
+},
+
+activity(){
+  const items=[['Today',[['av-green','NM',`Naledi logged <b>${fmt(S.readings.elec[0].v)} kWh</b>`,'16:40','bolt']]],['Yesterday',[['av-green','NM','Naledi bought <b>120 kWh</b> for R350','19:10','add_card'],['av-amber','LM','You logged <b>3 722.2 kWh</b>','19:05','bolt']]],['Mon 26 Nov',[['av-water','SM','Sipho swapped in the blue <b>9 kg</b> cylinder','08:15','propane_tank'],['av-water','SM','Sipho logged <b>3 710.9 kWh</b>','08:10','bolt']]],['Sat 24 Nov',[['av-amber','LM','You approved <b>Gogo</b> as viewer','12:30','person_add'],['av-water','SM','Sipho logged <b>1 284.6 m³</b> water','09:02','water_drop']]]];
+  const recent=S.activity.filter(a=>a.when==='Just now'||a.when.includes('ago'));
+  return {body:appbar('Activity')+`<div class="pbody">${recent.length?`<div class="grp">Today</div><div class="card flush">${recent.map(activityRow).join('')}</div>`:''}${items.slice(1).map(([g,rows])=>`<div class="grp">${g}</div><div class="card flush">${rows.map(([c,i,t,time,ic])=>`<div class="list-row"><span class="av sm ${c}">${i}</span><div class="t-body-sm">${t}</div><span class="t-caption">${time}</span></div>`).join('')}</div>`).join('')}</div>`};
+},
+
+gas(){
+  const pages=['new',...sortedCyls()];
+  if(S.cylPage>=pages.length) S.cylPage=pages.length-1;
+  if(S.cylPage<0) S.cylPage=0;
+  const pg=pages[S.cylPage];
+  if(!S.draft) S.draft = pg==='new' ? {id:null,isNew:true,size:9,color:'#D32F2F',active:true,bought:TODAY,start:TODAY,end:null,supplier:'',notes:'',price:''} : {...pg};
+  const d=S.draft, rate=gasRate(), isNew=!!d.isNew;
+  const used=isNew?0:cylDays(d);
+  const proj=isNew?{leftKg:d.size,level:1,daysLeft:Math.floor(d.size/rate)}:d.active?hkGasProjection(d,rate,used):{leftKg:0,level:0,daysLeft:0};
+  const pct=Math.round(proj.level*100);
+  const tone=proj.daysLeft<5?'var(--danger)':proj.daysLeft<10?'var(--elec)':'var(--success)';
+  const status=isNew?['b-info','add_circle','New cylinder']:d.active?['b-success','local_fire_department','Active in service']:['b-neutral','history','Used up'];
+  const empty0=cylList().length===0;
+
+  // level projection: next 14 days, today solid in the cylinder's own colour
+  let projChart='';
+  if(isNew||d.active){
+    const bars=Array.from({length:14},(_,i)=>{const l=Math.max(0,proj.leftKg-rate*i)/Math.max(.01,proj.leftKg);return l<=0?`<i class="is-anomaly" style="height:4%"></i>`:i===0?`<i style="height:${Math.max(6,l*100)}%;background:${d.color}"></i>`:`<i class="is-projected" style="height:${Math.max(6,l*100)}%"></i>`}).join('');
+    projChart=`<div class="t-label" style="margin-top:10px">Gas left · next 14 days</div><div class="bars" style="height:54px;margin-top:6px;gap:2px">${bars}</div><div class="axis"><span>Today</span><span>+7</span><span>+14</span></div>`;
+  }
+  const side = isNew ? `<span class="t-label">Starts full</span><div class="t-display" style="font-size:40px;color:var(--success);margin:6px 0 2px">${proj.daysLeft}<small style="font:500 15px var(--mono);color:var(--text);margin-left:4px">days</small></div><div class="t-caption">${d.size} kg at your ${rate.toFixed(2)} kg/day</div><div class="t-caption">Runs out around <b style="color:var(--text)">${addDays(d.start||TODAY,proj.daysLeft)}</b></div>${projChart}`
+   : d.active ? `<span class="t-label">Gas left</span><div class="t-display" style="font-size:40px;color:${tone};margin:6px 0 2px">${proj.daysLeft}<small style="font:500 15px var(--mono);color:var(--text);margin-left:4px">days</small></div><div class="t-caption"><b style="color:var(--text);font-family:var(--mono)">${pct}%</b> · ${proj.leftKg.toFixed(1)} of ${d.size} kg</div><div class="t-caption">Empty around <b style="color:var(--text)">${addDays(TODAY,proj.daysLeft)}</b></div><span class="badge ${cylList().filter(c=>!c.active).length>=2?'b-warning':'b-neutral'}" style="margin-top:6px">${icon('insights')}${cylList().filter(c=>!c.active).length} past cylinders</span>${projChart}`
+   : `<span class="t-label">Lasted</span><div class="t-display" style="font-size:40px;color:var(--text);margin:6px 0 2px">${used}<small style="font:500 15px var(--mono);margin-left:4px">days</small></div><div class="t-caption">${fmtDate(d.start)} – ${fmtDate(d.end)}</div><div class="t-caption"><b style="color:var(--text);font-family:var(--mono)">${(d.size/Math.max(1,used)).toFixed(2)} kg/day</b> average</div>${d.supplier?`<div class="t-caption">${d.supplier}${d.price?' · R'+d.price:''}</div>`:''}`;
+
+  const hero=`<div class="card" style="padding:12px 12px 14px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span class="badge ${status[0]}">${icon(status[1])}${status[2]}</span>
+      <div style="display:flex;align-items:center;gap:2px"><button class="icon-btn bare ${S.cylPage===0?'is-disabled':''}" data-act="cylPrev" aria-label="Previous cylinder">${icon('chevron_left')}</button><span class="t-label" style="min-width:34px;text-align:center">${S.cylPage+1}/${pages.length}</span><button class="icon-btn bare ${S.cylPage===pages.length-1?'is-disabled':''}" data-act="cylNext" aria-label="Next cylinder">${icon('chevron_right')}</button></div>
+    </div>
+    <div style="display:grid;grid-template-columns:138px 1fr;gap:12px;align-items:end;margin-top:4px">
+      <div class="cyl-stage" style="height:272px" data-act="cycleColor" title="Tap to cycle colour"><div class="${S.cylPop?'cyl-pop':''}">${hkCylinder({color:d.color,size:d.size,level:isNew?null:proj.level,placeholder:isNew,scale:.82})}</div></div>
+      <div style="padding-bottom:16px">${side}</div>
+    </div>
+    <div class="pager-dots" style="margin-top:10px">${pages.map((_,i)=>`<i data-act="cylPage" data-i="${i}" class="${i===S.cylPage?'is-current':i<S.cylPage?'is-visited':''}"></i>`).join('')}</div>
+    <div class="t-caption" style="text-align:center;margin-top:6px">${isNew?'Set size and colour below, then save':'Swipe through your cylinders · tap the cylinder to recolour'}</div>
+  </div>`;
+
+  const actions = (!isNew&&d.active) ? `<div class="btn-row" style="margin-top:10px"><button class="btn btn-primary" data-go="order">${icon('local_shipping')}Order gas</button><button class="btn btn-secondary" data-act="swapCyl">${icon('swap_horiz')}Swap cylinder</button></div>` : '';
+  const orderCard = S.order&&!isNew&&d.active ? `<div class="card" style="margin-top:10px;border-color:var(--primary)"><div style="display:flex;justify-content:space-between;align-items:center"><span class="t-label c-amber">Order sent</span><span class="badge b-info">Awaiting delivery</span></div><div class="t-title" style="font-size:15px;margin-top:6px">${S.order} · ${S.size}</div><div class="t-caption">Sent on WhatsApp today 18:50</div><button class="btn btn-tonal btn-block" style="margin-top:10px" data-act="delivered">${icon('inventory_2')}Mark as delivered</button></div>` : '';
+
+  const maxH=305, sil=k=>Math.round(40*({4:190,9:225,14:265,48:305}[k])/maxH);
+  const svcDays = `<div class="stat-grid" style="margin-top:4px"><div><span class="t-label">In service</span><b class="t-num-l">${used} <small>days</small></b></div><div><span class="t-label">Stored first</span><b class="t-num-l">${Math.max(0,daysBetween(d.bought||d.start,d.start))} <small>days</small></b></div></div>`;
+  const details=`<div class="card" style="margin-top:10px">
+    <div class="t-title">${isNew?'New cylinder':`Edit ${d.size} kg cylinder`}</div><div class="t-caption">Status, size and colour</div>
+    <div class="field-label" style="margin:14px 0 6px">Status</div>
+    <div class="seg"><button class="${d.active?'is-selected':''}" data-act="cylStatus" data-v="1">${icon('local_fire_department','xs')}Active (in use)</button><button class="${!d.active?'is-selected':''}" data-act="cylStatus" data-v="0">${icon('history','xs')}Used up</button></div>
+    <div class="field-label" style="margin:14px 0 6px">Size</div>
+    <div class="size-opts">${HK_CYL_SIZES.map(z=>`<button class="size-opt ${d.size===z.kg?'is-selected':''}" data-act="cylSize" data-k="${z.kg}"><span class="sil">${hkCylinder({color:d.size===z.kg?d.color:'#B8BEC4',size:z.kg,mini:true,scale:.135})}</span><b>${z.title}</b><span>${z.use}</span></button>`).join('')}</div>
+    <div style="display:flex;justify-content:space-between;margin:14px 0 6px"><span class="field-label">Colour</span><span class="t-caption">${colorName(d.color)}</span></div>
+    <div class="swatch-row">${HK_CYL_COLORS.map(([n,h])=>`<button class="swatch ${d.color===h?'is-selected':''}" style="background:${h}" data-act="cylColor" data-c="${h}" aria-label="${n}">${d.color===h?icon('check'):''}</button>`).join('')}</div>
+    <div style="border-top:1px solid var(--line);margin:12px -16px 0;padding:12px 16px 0">
+      <div class="collapse-h" data-act="svcToggle"><span class="ic ic-neutral">${icon('event_note')}</span><div class="grow"><b style="font:500 14px var(--font)">Service dates & details</b><div class="t-caption">${S.svcOpen?'Bought, start date, supplier, notes':`Optional · ${d.supplier||'no supplier'}${d.notes?' · '+d.notes:''}`}</div></div>${icon(S.svcOpen?'expand_less':'expand_more','muted')}</div>
+      ${S.svcOpen?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+        <div class="field"><label class="field-label">Bought</label><label class="input" style="height:46px"><input type="date" data-field="bought" value="${d.bought||''}" style="font:400 14px var(--font)"></label></div>
+        <div class="field"><label class="field-label">Started using</label><label class="input" style="height:46px"><input type="date" data-field="start" value="${d.start||''}" style="font:400 14px var(--font)"></label></div></div>
+        ${svcDays}
+        <div class="field" style="margin-top:10px"><label class="field-label">Supplier</label><label class="input" style="height:46px">${icon('storefront','sm muted')}<input data-field="supplier" value="${d.supplier||''}" placeholder="e.g. Afrigas"></label></div>
+        <div class="field" style="margin-top:10px"><label class="field-label">Notes</label><label class="input" style="height:46px">${icon('edit_note','sm muted')}<input data-field="notes" value="${d.notes||''}" placeholder="e.g. Kitchen stove"></label></div>`:''}
+    </div>
+    <div style="margin-top:14px">${btn('btn-primary btn-lg btn-block',isNew?'add_circle':'save',isNew?`Save new ${d.size} kg cylinder`:`Update ${d.size} kg cylinder`,'cylSave','Saving…')}</div>
+  </div>`;
+
+  const hist = sortedCyls();
+  const history=`<div class="section-h"><span class="t-label">Cylinder history</span><span class="t-caption">${hist.length} logged</span></div>
+    ${hist.length?`<div class="card flush">${hist.map((c,i)=>{const days=cylDays(c), p=gasProj(c), sel=!isNew&&c.id===d.id;
+      return `<div class="list-row is-pressable" data-act="cylFocus" data-i="${i+1}" style="${sel?'background:var(--primary-soft)':''}">${cylMini(c,c.active?p.level:null)}
+      <div><b>${c.size} kg cylinder</b><span class="sub">${colorName(c.color)}${c.supplier?' · '+c.supplier.split(' ')[0]:''}</span><span class="sub">${fmtDate(c.start)} – ${c.end?fmtDate(c.end):'now'} · ${days} days</span>
+      <div style="margin-top:4px">${c.active?`<span class="badge b-success">Active · ${Math.round(p.level*100)}% left</span>`:'<span class="tag">Finished</span>'}</div></div>
+      <div style="display:flex;align-items:center;gap:2px"><div class="num">${c.active?gasRate().toFixed(2):days?(c.size/days).toFixed(2):'—'}<small>${c.active?'kg/day est.':'kg/day'}</small></div><span class="icon-btn bare" data-act="cylDel" data-id="${c.id}" aria-label="Delete">${icon('delete','sm')}</span></div></div>`}).join('')}</div>`
+    :`<div class="card">${empty('propane_tank','No cylinders logged yet','Save your first cylinder above. After it runs out, we\'ll use its kg/day to predict the next one.')}</div>`}`;
+
+  S.cylPop=false;
+  return {body:appbar('Gas cylinder',`<span class="icon-btn" data-act="swapCyl" aria-label="New cylinder">${icon('add_circle')}</span>`)+`<div class="pbody">
+    ${empty0?`<div class="banner banner-info" style="margin-bottom:10px">${icon('info')}<span class="grow">Add the cylinder you're using now. We'll estimate when it runs out.</span></div>`:''}
+    ${hero}${actions}${orderCard}${details}${history}</div>`};
+},
+
+order(){
+  const sup=SUPP.map(([n,sp,f,d,ch,km])=>[n,sp,'R'+priceFor(f),d,ch,km]);
+  if((S.v||'list')==='none') return {body:appbar('Order gas')+`<div class="pbody"><div class="card" style="margin-top:8px">${empty('location_off','No suppliers near you yet','We don\'t have LPG suppliers listed for Polokwane. You can still log the cylinder you buy.',`<button class="btn btn-secondary">${icon('edit_location')}Change area</button>`)}</div></div>`};
+  return {body:appbar('Order gas')+`<div class="pbody">
+    <div class="card flush"><div class="setting-row"><span class="ic ic-neutral">${icon('location_on')}</span><div class="grow"><b>Deliver to</b><span class="t-caption">12 Jacaranda St, Lynnwood, Pretoria</span></div><span class="link">Change</span></div></div>
+    <div class="chips" style="margin-top:12px">${['4 kg','9 kg','14 kg','48 kg'].map(s=>`<span class="chip ${S.size==s?'is-selected':''}" data-act="size" data-s="${s}">${s}</span>`).join('')}</div>
+    <div class="section-h"><span class="t-label">Suppliers near you</span><span class="t-caption">Prices for ${S.size}</span></div>
+    <div class="card flush">${sup.map(([n,sp,p,d,ch,km])=>`<div class="list-row is-pressable" data-act="supplier" data-n="${n}"><span class="ic ic-gas">${icon('storefront')}</span><div><b>${n}</b><span class="sub">${d} · ${ch} · ${km}</span>${sp?'<div style="margin-top:4px"><span class="tag" style="color:var(--info);border-color:var(--info-soft);background:var(--info-soft)">Sponsored</span></div>':''}</div><div class="num">${p}</div></div>`).join('')}</div>
+    <p class="t-caption" style="margin-top:10px">HouseKeeper doesn't take payment. You pay the supplier directly.</p>
+  </div>`};
+},
+
+notifications(){
+  if(S.data==='empty') return {body:appbar('Notifications')+`<div class="pbody"><div class="card" style="margin-top:8px">${empty('notifications_off','You\'re all caught up','Run-out reminders and unusual-usage alerts for '+S.house+' will show up here.')}</div></div>`};
+  const n=[['Today',[['ic-elec','bolt','Electricity runs out in about 3 days','36 kWh left. Tap to buy or log a top-up.','18:00','usage'],['ic-neutral','person_add','Thabo M. asked to join','Approve or decline in Household.','18:22','household']]],['This week',[['ic-gas','warning','Unusual electricity use','17–19 Nov: 28% above normal. Geyser left on?','Tue','reports'],['ic-gas','propane_tank','Gas runs low next week','Order by Mon 3 Dec to be safe.','Mon','gas'],['ic-ok','summary','October summary','R1 038 on electricity, 3% less than September.','1 Nov','reports']]]];
+  return {body:appbar('Notifications',`<span class="icon-btn" data-go="notifsettings">${icon('tune')}</span>`)+`<div class="pbody">${n.map(([g,r])=>`<div class="grp">${g}</div><div class="card flush">${r.map(([c,i,t,s,time,go])=>`<div class="list-row is-pressable" data-go="${go}" ${go=='usage'?'data-util="elec"':''}><span class="ic ${c}">${icon(i,'fill')}</span><div><b style="font-size:13.5px">${t}</b><span class="sub">${s}</span></div><span class="t-caption">${time}</span></div>`).join('')}</div>`).join('')}</div>`};
+},
+
+notifsettings(){
+  const row=(k,t,s)=>`<div class="setting-row"><div class="grow"><b>${t}</b><span class="t-caption">${s}</span></div><button class="switch ${S.notif[k]?'is-on':''}" data-act="notif" data-k="${k}" aria-label="${t}"></button></div>`;
+  return {body:appbar('Notification settings')+`<div class="pbody"><div class="grp">${S.house}</div><div class="card flush">
+    ${row('buy','Buy-electricity reminder','3 days before run-out, daily until a top-up')}${row('gas','Gas running low','5 days before the cylinder runs out')}${row('nudge','Log-a-reading nudge','After 4 days without a reading')}${row('anom','Unusual usage','Warning and critical only')}${row('summary','Monthly summary','1st of every month')}</div>
+    <div class="grp">Quiet hours</div><div class="card flush"><div class="setting-row"><span class="ic ic-neutral">${icon('bedtime')}</span><div class="grow"><b>22:00 – 06:30</b><span class="t-caption">Alerts wait until morning</span></div><span class="link">Edit</span></div></div></div>`};
+},
+
+settings(){
+  return {nav:4,body:`<div class="appbar"><span class="title">Settings</span></div><div class="pbody">
+    <div class="card" style="display:flex;gap:12px;align-items:center"><span class="av av-amber" style="width:48px;height:48px;font-size:16px">LM</span><div style="flex:1"><b class="t-title">Lerato M.</b><div class="t-caption">2 households</div></div>${icon('chevron_right','muted')}</div>
+    <div class="grp">App</div><div class="card flush">
+      <div class="setting-row" data-go="notifsettings" style="cursor:pointer"><span class="ic ic-neutral">${icon('notifications')}</span><div class="grow"><b>Notifications</b><span class="t-caption">4 of 5 on · quiet 22:00–06:30</span></div>${icon('chevron_right','muted')}</div>
+      <div class="setting-row"><span class="ic ic-neutral">${icon('straighten')}</span><div class="grow"><b>Units & currency</b><span class="t-caption">kWh, m³, kg · Rand (R)</span></div>${icon('chevron_right','muted')}</div>
+      <div class="setting-row"><span class="ic ic-neutral">${icon('contrast')}</span><div class="grow"><b>Theme</b><span class="t-caption">Follow system</span></div>${icon('chevron_right','muted')}</div></div>
+    <div class="grp">Scanner model</div><div class="card flush">
+      ${[['ML Kit','Default, works offline'],['7-segment model','For LCD meters · downloaded'],['Slashed-zero model','For meters with Ø digits · 4.2 MB']].map((m,i)=>`<div class="setting-row" data-act="ocr" data-i="${i}" style="cursor:pointer"><span class="radio ${S.ocr==i?'is-on':''}"></span><div class="grow"><b>${m[0]}</b><span class="t-caption">${S.busy==='ocr'+i?'Downloading… 62%':m[1]}</span>${S.busy==='ocr'+i?'<div class="progress" style="margin-top:6px"><i style="width:62%"></i></div>':''}</div></div>`).join('')}</div>
+    <div class="grp">Privacy & account</div><div class="card flush">
+      <div class="setting-row"><span class="ic ic-neutral">${icon('download')}</span><div class="grow"><b>Download my data</b></div>${icon('chevron_right','muted')}</div>
+      <div class="setting-row"><span class="ic ic-neutral">${icon('ads_click')}</span><div class="grow"><b>Ad preferences</b></div>${icon('chevron_right','muted')}</div>
+      <div class="setting-row" data-act="deleteAcct" style="cursor:pointer"><span class="ic" style="background:var(--danger-soft);color:var(--danger)">${icon('delete')}</span><div class="grow"><b style="color:var(--danger)">Delete account</b></div></div></div>
+  </div>`};
+},
+};
+
+/* ================= COMPONENT HELPERS ================= */
+function gasHomeRow(){
+  const c=activeCyl();
+  if(!c) return `<div class="list-row is-pressable" data-go="gas"><span class="ic ic-gas">${icon('propane_tank','fill')}</span><div><b>Gas</b><span class="sub">No cylinder yet · tap to add</span></div>${icon('chevron_right','muted')}</div>`;
+  const p=gasProj(c);
+  return `<div class="list-row is-pressable" data-go="gas">${cylMini(c,p.level)}<div><b>Gas · ${c.size} kg</b><span class="sub">${colorName(c.color)} · ${Math.round(p.level*100)}% left</span><div class="mini"><i style="width:${Math.round(p.level*100)}%;background:${c.color}"></i></div></div><div class="num">${p.daysLeft} d<small>Order by ${addDays(TODAY,Math.max(0,p.daysLeft-2)).slice(4)}</small></div></div>`;
+}
+const SUPP=[['Afrigas Pretoria East',1,1,'Delivery today','WhatsApp','2.1 km'],['Easigas Hatfield',0,1.04,'Delivery tomorrow','Phone','4.8 km'],['Garsfontein Gas & Braai',0,.96,'Collect only','In store','3.3 km']];
+const BASE={4:165,9:329,14:495,48:1650};
+const priceFor=(f)=>Math.round(BASE[parseInt(S.size)]*f);
+function chartCard(util,withAnom){
+  const r=REP[util]; const sel=S.bar;
+  const val=sel!=null?(r.daily[sel]/100*r.scale*(util==='elec'?1.12:1)).toFixed(1):null;
+  return `<div class="card" style="margin-top:10px">
+    <div style="display:flex;justify-content:space-between"><span class="t-label">Daily ${r.unitDay} · ${S.month}</span><span class="t-label" style="color:var(--text)">${sel!=null?`${S.month} ${sel+1} · ${val}`:'avg '+r.avg}</span></div>
+    <div class="bars" style="margin-top:10px"><span class="avg" style="bottom:60%"></span>${r.daily.map((h,i)=>`<i data-act="bar" data-i="${i}" class="${sel===i?'is-selected':h>80?'is-anomaly':''}" style="height:${h}%"></i>`).join('')}${[60,62,58,60,61].map(h=>`<i class="is-projected" style="height:${h}%"></i>`).join('')}</div>
+    <div class="axis"><span>01</span><span>10</span><span>20</span><span>30</span></div>
+    ${withAnom!==false?`<div style="display:flex;gap:10px;align-items:flex-start;margin-top:10px" class="t-body-sm muted">${icon(util==='elec'?'warning':'info',util==='elec'?'':'')}<div style="color:var(--text-2)">${r.anom.replace('<b>','<b style="color:var(--text)">')}</div></div>`:''}
+  </div>`;
+}
+function readingRow(r,i,menu){
+  const u=U[S.util];
+  const badge=r.s==='wait'?`<span class="badge b-info">${icon('cloud_upload')}Waiting</span>`:`<span class="badge b-success">${icon('cloud_done')}</span>`;
+  return `<div class="list-row"><span class="ic ${u.ic}">${icon(u.icon,'fill')}</span><div><b class="t-num-m" style="font-size:15px">${fmt(r.v)} ${u.unit}</b><span class="sub">${r.t} · ${r.by}</span></div><div style="display:flex;align-items:center;gap:2px">${badge}${menu?`<span class="icon-btn bare" data-act="delReading" data-i="${i}" aria-label="Delete">${icon('delete','sm')}</span>`:''}</div></div>`;
+}
+function topPreview(units){
+  const nl=S.elecLeft+units, nd=nl/S.rate;
+  return units>0?`<span class="t-label">After this top-up</span><div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:6px"><b class="t-num-l">${fmt(nl)} <small style="font-size:12px;color:var(--text-2)">kWh</small></b><span class="badge b-success">${icon('schedule')}~${fmt(nd)} days</span></div><div class="t-caption" style="margin-top:4px">${S.topAmt?`R${(parseFloat(S.topAmt)/units).toFixed(2)} per kWh · `:''}Everyone's run-out date updates.</div>`
+   :`<span class="t-label">Now</span><div style="margin-top:6px"><b class="t-num-l">${fmt(S.elecLeft)} <small style="font-size:12px;color:var(--text-2)">kWh</small></b> <span class="t-caption">· about ${fmt(days())} days</span></div>`;
+}
+function topSaveBtn(units){
+  return S.busy==='saveTop'?`<button class="btn btn-primary btn-lg btn-block is-loading"><span class="spin"></span>Saving…</button>`
+   :`<button class="btn btn-primary btn-lg btn-block" data-act="saveTop" ${units>0?'':'disabled'}>${icon('check')}Save top-up</button>`;
+}
+function bindTopup(){
+  const f=()=>{S.topAmt=$('#tAmt').value;S.topUnits=$('#tUnits').value;const u=parseFloat(S.topUnits)||0;$('#tPrev').innerHTML=topPreview(u);$('#tSave').innerHTML=topSaveBtn(u)};
+  $('#tAmt').oninput=f;$('#tUnits').oninput=f;
+}
+function updateManual(){
+  const inp=$('#mIn'); if(!inp) return;
+  const run=()=>{
+    S.manual=inp.value; const u=U[S.util]; const last=S.readings[S.util][0]; const v=parseFloat(S.manual);
+    let help=`<span class="field-help">${icon('history')}Last: ${fmt(last.v)} ${u.unit} · ${last.t}, ${last.by}</span>`, box='';
+    if(S.manual && isNaN(v)){help=`<span class="field-error">${icon('error')}Numbers only, e.g. 3733.4</span>`;box='is-error'}
+    else if(!isNaN(v)&&v<last.v){help=`<span class="field-help" style="color:var(--warning)">${icon('warning')}Lower than ${fmt(last.v)}. If you topped up, log a top-up instead. You can still save.</span>`;box='warn'}
+    else if(!isNaN(v)&&v-last.v>(S.util==='elec'?60:5)){help=`<span class="field-help" style="color:var(--warning)">${icon('warning')}That's ${fmt(v-last.v)} ${u.unit} since last time, far above normal. Check the digits.</span>`;box='warn'}
+    else if(!isNaN(v)){help=`<span class="field-help" style="color:var(--success)">${icon('check_circle')}+${fmt(v-last.v)} ${u.unit} since ${last.t.toLowerCase()}. Looks normal.</span>`}
+    $('#mHelp').innerHTML=help;
+    const b=$('#mBox'); b.classList.toggle('is-error',box==='is-error'); b.style.border=box==='warn'?'2px solid var(--elec)':''; b.style.padding=box==='warn'?'0 13px':'';
+    const ok=!isNaN(v)&&S.manual!=='';
+    $('#mSave').innerHTML=S.busy==='saveManual'?`<button class="btn btn-primary btn-lg btn-block is-loading"><span class="spin"></span>Saving…</button>`:`<button class="btn btn-primary btn-lg btn-block" data-act="saveManual" ${ok?'':'disabled'}>${icon('check')}${box==='warn'&&ok?'Save anyway':'Save reading'}</button>`;
+  };
+  inp.oninput=run; run(); setTimeout(()=>{inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length)},50);
+}
+function bindJoin(){
+  const inp=$('#jIn'); if(!inp) return;
+  const run=()=>{let v=inp.value.toUpperCase();inp.value=v;S.join=v;
+    const full=/^HK-[A-Z0-9]{5}$/.test(v);
+    $('#jBtn').innerHTML=S.busy==='join'?`<button class="btn btn-primary btn-lg btn-block is-loading"><span class="spin"></span>Checking code…</button>`:`<button class="btn btn-primary btn-lg btn-block" data-act="joinGo" ${v.length>=4?'':'disabled'}>${icon('login')}Send join request</button>`;
+    if(S.joinErr&&full){S.joinErr=false;$('#jBox').classList.remove('is-error');$('#jHelp').innerHTML='<span class="field-help">Letters and numbers only.</span>'}};
+  inp.oninput=run; run(); setTimeout(()=>inp.focus(),50);
+}
+
+/* ================= OVERLAYS ================= */
+const OV = {
+  exportSheet:()=>`<div class="sheet"><div class="grab"></div><div class="t-title">Export ${S.month==='Nov'?'November':S.month==='Oct'?'October':'September'}</div><div class="t-caption" style="margin-bottom:12px">${U[S.rUtil].name} · ${REP[S.rUtil].based.join(' ')}</div>
+    <div class="seg" style="margin-bottom:12px"><button class="${S.exportFmt=='PDF'?'is-selected':''}" data-act="fmt" data-f="PDF">${icon('picture_as_pdf','xs')}PDF report</button><button class="${S.exportFmt=='CSV'?'is-selected':''}" data-act="fmt" data-f="CSV">${icon('table','xs')}CSV readings</button></div>
+    <div class="t-body-sm muted" style="margin-bottom:14px">${S.exportFmt=='PDF'?'Household name, period, totals, graph and reading list.':'One row per reading: date, value, unit, logged by.'}</div>
+    <div class="btn-row">${S.busy==='share'?'<button class="btn btn-secondary is-disabled">'+icon('link')+'Copy link</button>':`<button class="btn btn-secondary" data-act="copyLink">${icon('link')}Copy link</button>`}${btn('btn-primary','share','Share','share','Preparing…')}</div>
+    <div class="t-caption" style="margin-top:10px;text-align:center">Links expire after 7 days.</div></div>`,
+  periodSheet:()=>{const P=[['Until payday','Today – 25 Dec','362 kWh','R1 046','b-warning','Medium'],['Next 14 days','Today – 12 Dec','175 kWh','R506','b-success','High'],['December holiday','15 – 31 Dec','230 kWh','R665','b-neutral','Low']];const p=P[S.period];
+    return `<div class="sheet"><div class="grab"></div><div class="t-title">Custom period</div><div class="t-caption" style="margin-bottom:12px">Expected ${U[S.rUtil].name.toLowerCase()} use and cost for any dates</div>
+    <div class="chips" style="margin-bottom:12px">${P.map((x,i)=>`<span class="chip ${S.period==i?'is-selected':''}" data-act="period" data-i="${i}">${x[0]}</span>`).join('')}<span class="chip">${icon('event','xs')}Pick dates</span></div>
+    <div class="stat-grid"><div><span class="t-label">${p[1]}</span><b class="t-num-l">${p[2]}</b><span class="badge ${p[4]}" style="margin-top:4px">${p[5]} confidence</span></div><div><span class="t-label">Expected cost</span><b class="t-num-l">${p[3]}</b><span class="delta muted">at R2.89 / kWh</span></div></div>
+    <div class="t-caption" style="margin:10px 0 14px">Based on 12.5 kWh/day over the last 30 days, adjusted for the weather forecast.</div>
+    <button class="btn btn-primary btn-lg btn-block" data-act="close">Done</button></div>`},
+  shareSheet:()=>`<div class="sheet"><div class="grab"></div><div class="t-title">Invite to ${S.house}</div><div class="t-caption">They'll need your approval to join.</div>
+    <div style="text-align:center;margin:14px 0 4px"><div class="qr big"></div><div class="code" style="margin-top:12px">${S.code}</div></div>
+    <div class="sharegrid">${[['chat','WhatsApp'],['sms','SMS'],['content_copy','Copy'],['more_horiz','More']].map(([i,n])=>`<button data-act="shareVia" data-n="${n}"><span class="ic">${icon(i)}</span>${n}</button>`).join('')}</div></div>`,
+  houseSheet:()=>`<div class="sheet"><div class="grab"></div><div class="t-title" style="margin-bottom:10px">Your households</div><div class="card flush">
+    ${[['Pretoria Home','4 members · electricity 2.9 days left'],["Gogo's place",'Polokwane · gas runs low Sat']].map(([n,s])=>`<div class="setting-row" data-act="pickHouse" data-n="${n}" style="cursor:pointer"><span class="radio ${S.house==n?'is-on':''}"></span><div class="grow"><b>${n}</b><span class="t-caption">${s}</span></div></div>`).join('')}</div>
+    <div class="btn-row" style="margin-top:12px"><button class="btn btn-secondary" data-act="goJoin">${icon('login')}Join with code</button><button class="btn btn-secondary">${icon('add_home')}Create</button></div></div>`,
+  supplier:()=>`<div class="sheet"><div class="grab"></div><div style="display:flex;gap:12px;align-items:center"><span class="ic ic-gas" style="width:44px;height:44px">${icon('storefront')}</span><div><div class="t-title">${S.supplier}</div><div class="t-caption">Delivery today · 2.1 km · Mon–Sat 07:00–18:00</div></div></div>
+    <div class="card" style="margin:14px 0;background:var(--surface-2);border:none"><span class="t-label">Message we'll prepare</span><p class="t-body-sm" style="margin-top:6px;font-family:var(--mono)">Hi, I'd like a ${S.size} LPG swap delivered to 12 Jacaranda St, Lynnwood. Sent from HouseKeeper.</p></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:14px"><span class="t-body muted">${S.size} swap</span><b class="t-num-m">R${S.supPrice}</b></div>
+    ${btn('btn-primary btn-lg btn-block','chat','Send order on WhatsApp','sendOrder','Opening WhatsApp…')}
+    <button class="btn btn-ghost btn-block" style="margin-top:4px">${icon('call')}Call instead</button></div>`,
+  newCode:()=>`<div class="dialog"><h3>Make a new join code?</h3><p>${S.code} will stop working. Members already in ${S.house} stay. Anyone with a pending invite needs the new code.</p><div class="actions"><button class="btn btn-ghost" data-act="close">Cancel</button>${btn('btn-primary','','Make new code','doNewCode','Creating…')}</div></div>`,
+  delReading:()=>`<div class="dialog"><h3>Delete this reading?</h3><p>${fmt(S.readings[S.util][S.delIdx].v)} ${U[S.util].unit} from ${S.readings[S.util][S.delIdx].t.toLowerCase()} will be removed for everyone in ${S.house}. This can't be undone.</p><div class="actions">${S.busy==='doDel'?'<button class="btn btn-ghost is-disabled">Cancel</button>':'<button class="btn btn-ghost" data-act="close">Cancel</button>'}${btn('btn-danger','','Delete reading','doDel','Deleting…')}</div></div>`,
+  deleteAcct:()=>`<div class="dialog"><h3>Delete your account?</h3><p>Your profile and readings are removed within 30 days. You own ${S.house}. Make Naledi the owner first, or the household will be deleted too.</p><div class="actions"><button class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-danger" data-act="close">Delete account</button></div></div>`,
+  member:()=>`<div class="sheet"><div class="grab"></div><div class="t-title">${S.memberName}</div><div class="t-caption" style="margin-bottom:12px">Role in ${S.house}</div><div class="card flush">${[['Admin','Approve members, edit meters'],['Member','Log readings, view reports'],['Viewer','View only, gets alerts']].map(([r,d])=>`<div class="setting-row"><span class="radio ${(S.members.find(m=>m[1]==S.memberName)||[])[2]==r?'is-on':''}"></span><div class="grow"><b>${r}</b><span class="t-caption">${d}</span></div></div>`).join('')}</div><button class="btn btn-ghost btn-block" style="margin-top:10px;color:var(--danger)" data-act="close">${icon('person_remove')}Remove from household</button></div>`,
+};
+
+/* ================= RENDER ================= */
+let snackTimer;
+function render(){
+  const s=SCREENS[S.screen](); const scr=$('#scr');
+  $('#sb').classList.toggle('dark',!!s.dark); scr.classList.toggle('dark',!!s.dark);
+  $('#netIcon').textContent=S.online?'signal_cellular_alt':'signal_cellular_off';
+  let html=s.body.includes('class="pbody"')||s.dark?s.body:s.body;
+  if(s.nav!=null) html+=navbar(s.nav);
+  if(S.overlay){const o=OV[S.overlay]();html+=`<div class="scrim ${o.startsWith('<div class="dialog')?'center':''}" data-act="scrim">${o}</div>`}
+  if(S.snack) html+=`<div class="snack-wrap" style="bottom:${s.nav!=null?88:14}px"><div class="snack">${S.snack.icon?icon(S.snack.icon,'sm'):''}<span class="grow">${S.snack.text}</span>${S.snack.action?`<span class="act" data-act="snackAct">${S.snack.action}</span>`:''}</div></div>`;
+  const prevScroll=scr.querySelector('.pbody')?.scrollTop||0;
+  scr.innerHTML=html;
+  if(S._keepScroll){const pb=scr.querySelector('.pbody');if(pb)pb.scrollTop=prevScroll}
+  S._keepScroll=false;
+  s.after&&s.after();
+  renderMenu(); renderNotes();
+}
+function rerender(){S._keepScroll=true;render()}
+function go(screen,opts={}){
+  if(screen!==S.screen){S.stack.push(S.screen)}
+  S.screen=screen; S.overlay=null; S.bar=null; S.editIdx=null; S.v=opts.v||null; S.busy=null;
+  if(opts.util) S.util=opts.util;
+  if(screen==='scan'){S.digits=null; if(!opts.v){S.v='scanning'; const tok=Date.now(); S._scanTok=tok; setTimeout(()=>{if(S.screen==='scan'&&S._scanTok===tok&&S.v==='scanning'){S.v='detected';rerender()}},1100)}}
+  if(screen==='manual'&&opts.prefill!==false&&S.stack[S.stack.length-1]==='scan'){S.manual=(S.digits||U[S.util].digits).join('')} else if(screen==='manual'&&!opts.keep){S.manual=''}
+  if(screen==='topup'){S.topAmt='';S.topUnits=''}
+  if(screen==='gas'){S.draft=null;S.cylPop=true;S.cylPage=cylList().length?1:0}
+  if(screen==='join'&&!opts.v){S.join='';S.joinErr=false}
+  render(); $('#scr .pbody')&&($('#scr .pbody').scrollTop=0);
+}
+function back(){S.screen=S.stack.pop()||'home';S.overlay=null;S.v=null;S.busy=null;S.editIdx=null;render()}
+function snack(text,{action,icon:ic,undo}={}){S.snack={text,action,icon:ic,undo};clearTimeout(snackTimer);snackTimer=setTimeout(()=>{S.snack=null;rerender()},action?6000:4000)}
+function later(key,ms,fn){S.busy=key;rerender();setTimeout(()=>{S.busy=null;fn();rerender()},ms)}
+function addReading(util,v){
+  const r={v,t:'Today 18:'+(43+Math.floor(Math.random()*9)),by:'You',s:S.online?'ok':'wait'};
+  S.readings[util].unshift(r);
+  logActivity(`logged <b>${fmt(v)} ${U[util].unit}</b>`,U[util].name+' reading'+(r.s==='wait'?' · waiting to sync':''),U[util].icon);
+  if(util==='elec'&&S.online===true){S.elecLeft=Math.max(0,S.elecLeft-0)}
+  return r;
+}
+function saveNewCylinder(o){
+  const list=cylList();
+  list.forEach(c=>{if(c.active){c.active=false;c.end=TODAY}});
+  const c={id:'c'+Date.now(),size:o.size||9,color:o.color||'#D32F2F',active:o.active!==false,bought:o.bought||TODAY,start:o.start||TODAY,end:null,supplier:o.supplier||'',price:o.price||'',notes:o.notes||'',by:'You'};
+  if(!c.active)c.end=TODAY;
+  list.push(c); S.draft=null; S.cylPage=sortedCyls().findIndex(x=>x.id===c.id)+1; S.cylPop=true;
+  logActivity(`swapped in a new <b>${c.size} kg</b> cylinder`,colorName(c.color)+' · gas','propane_tank');
+}
+function savedSnack(util,r){
+  snack(S.online?`Reading saved · ${fmt(r.v)} ${U[util].unit}`:'Saved on phone. Will sync when you\'re online.',{action:'UNDO',icon:S.online?'check_circle':'cloud_upload',undo:()=>{S.readings[util].shift();snack('Reading removed')}});
+}
+
+/* ================= EVENTS ================= */
+document.addEventListener('input',e=>{const f=e.target.dataset&&e.target.dataset.field; if(f&&S.draft&&e.target.type!=='date'){S.draft[f]=e.target.value}});
+document.addEventListener('change',e=>{const f=e.target.dataset&&e.target.dataset.field; if(f&&S.draft&&e.target.type==='date'&&e.target.value){S.draft[f]=e.target.value;rerender()}});
+document.addEventListener('click',e=>{
+  const goEl=e.target.closest('[data-go]');
+  const actEl=e.target.closest('[data-act]');
+  if(actEl && (!goEl || goEl.contains(actEl))){ handle(actEl.dataset.act, actEl, e); return; }
+  if(goEl){ if(S.overlay&&!goEl.closest('.scrim')){S.overlay=null} go(goEl.dataset.go,{util:goEl.dataset.util,v:goEl.dataset.v}); }
+});
+function handle(a,el,e){
+  const d=el.dataset;
+  switch(a){
+  case 'back': back(); break;
+  case 'scrim': if(e.target===el){S.overlay=null;rerender()} break;
+  case 'close': S.overlay=null; rerender(); break;
+  case 'snackAct': const u=S.snack.undo; S.snack=null; u?u():null; rerender(); break;
+  case 'buy': snack('Opens your bank app or prepaid vendor, outside HouseKeeper',{icon:'open_in_new'}); rerender(); break;
+  case 'houseSheet': case 'exportSheet': case 'periodSheet': case 'shareSheet': case 'newCode': case 'deleteAcct':
+    S.overlay=a; rerender(); break;
+  case 'pickHouse': S.house=d.n; S.overlay=null; snack('Switched to '+d.n,{icon:'home'}); rerender(); break;
+  case 'goJoin': S.overlay=null; go('join'); break;
+  /* scanner */
+  case 'sutil': S.util=d.u; S.digits=null; S.editIdx=null; S.v='detected'; rerender(); break;
+  case 'model': {const M=['ML KIT','7-SEGMENT','SLASHED-ZERO']; S.model=M[(M.indexOf(S.model)+1)%3]; rerender(); break;}
+  case 'torch': S.torch=!S.torch; if(S.v==='nothing'&&S.torch){S.v='scanning';rerender();setTimeout(()=>{if(S.screen==='scan'){S.v='detected';rerender()}},900)} else rerender(); break;
+  case 'digit': S.editIdx=+d.i; if(!S.digits)S.digits=U[S.util].digits.slice(); rerender(); break;
+  case 'setdigit': S.digits[S.editIdx]=d.n; S.editIdx=null; rerender(); break;
+  case 'saveScan': {const v=parseFloat((S.digits||U[S.util].digits).join('')); const util=S.util; later('saveScan',700,()=>{const r=addReading(util,v); S.stack=[]; S.screen='home'; S.v=null; savedSnack(util,r)}); break;}
+  /* manual */
+  case 'mutil': S.util=d.u; S.manual=''; rerender(); break;
+  case 'toggleEl': el.classList.toggle('is-on'); break;
+  case 'saveManual': {const v=parseFloat(S.manual), util=S.util; S.busy='saveManual'; updateManual(); setTimeout(()=>{S.busy=null;const r=addReading(util,v);S.stack=[];S.screen='home';savedSnack(util,r);render()},700); break;}
+  /* top-up */
+  case 'saveTop': {const u=parseFloat(S.topUnits); S.busy='saveTop'; $('#tSave').innerHTML=topSaveBtn(u); setTimeout(()=>{S.busy=null;S.elecLeft+=u;logActivity(`topped up <b>${fmt(u)} kWh</b>${S.topAmt?' for R'+S.topAmt:''}`,'Prepaid electricity','add_card');S.stack=[];S.screen='home';snack(`Top-up logged · +${fmt(u)} kWh. Run-out date updated for everyone.`,{icon:'check_circle',action:'UNDO',undo:()=>{S.elecLeft-=u;snack('Top-up removed')}});render()},800); break;}
+  /* history */
+  case 'hutil': S.util=d.u; rerender(); break;
+  case 'delReading': S.delIdx=+d.i; S.overlay='delReading'; rerender(); break;
+  case 'doDel': later('doDel',800,()=>{S.readings[S.util].splice(S.delIdx,1);S.overlay=null;snack('Reading deleted. Logged in activity.',{icon:'delete'})}); break;
+  /* reports */
+  case 'rutil': S.rUtil=d.u; S.bar=null; S.sug=null; rerender(); break;
+  case 'month': S.month=d.m; S.bar=null; rerender(); break;
+  case 'bar': S.bar=S.bar===+d.i?null:+d.i; rerender(); break;
+  case 'sug': S.sug=true; rerender(); break;
+  case 'fmt': S.exportFmt=d.f; rerender(); break;
+  case 'period': S.period=+d.i; rerender(); break;
+  case 'copyLink': S.overlay=null; snack('Link copied · expires in 7 days',{icon:'link'}); rerender(); break;
+  case 'share': later('share',1000,()=>{S.overlay=null;snack(`${S.exportFmt} ready · opening share sheet`,{icon:'ios_share'})}); break;
+  /* household */
+  case 'approve': later('approve',800,()=>{S.req=false;S.members.push(['TM','Thabo M.','Member','av-info','Joined just now']);snack('Thabo joined as a member',{icon:'person_add',action:'UNDO',undo:()=>{S.members.pop();S.req=true;snack('Thabo removed')}})}); break;
+  case 'decline': S.req=false; snack('Request declined',{action:'UNDO',undo:()=>{S.req=true}}); rerender(); break;
+  case 'doNewCode': later('doNewCode',800,()=>{S.code='HK-'+Math.random().toString(36).slice(2,7).toUpperCase().replace(/[^A-Z0-9]/g,'Q');S.overlay=null;snack('New code ready. The old one no longer works.',{icon:'refresh'})}); break;
+  case 'shareVia': S.overlay=null; snack(d.n==='Copy'?`Copied ${S.code}`:`Opening ${d.n}…`,{icon:d.n==='Copy'?'content_copy':'share'}); rerender(); break;
+  case 'member': if(d.n.includes('(you)'))break; S.memberName=d.n; S.overlay='member'; rerender(); break;
+  /* join */
+  case 'joinGo': if(!/^HK-[A-Z0-9]{5}$/.test(S.join)){S.joinErr=true;$('#jBox').classList.add('is-error');$('#jHelp').innerHTML=`<span class="field-error">${icon('error')}Codes have 5 characters after HK-.</span>`;break}
+    S.busy='join'; bindJoin(); setTimeout(()=>{S.busy=null; if(!S.online){S.joinErr=false;snack('Couldn\'t send join request. You\'re offline.',{icon:'error',action:'RETRY',undo:()=>handle('joinGo',el,e)});rerender();return} S.v='waiting';rerender()},900); break;
+  case 'cancelJoin': S.v=null; snack('Request cancelled'); rerender(); break;
+  case 'approvedSim': S.stack=[]; S.screen='home'; S.v=null; snack(`You joined Pretoria Home`,{icon:'celebration'}); render(); break;
+  /* gas */
+  case 'size': S.size=d.s; rerender(); break;
+  case 'supplier': {S.supplier=d.n; S.supplierName=d.n; const f=SUPP.find(x=>x[0]===d.n); S.supPrice=priceFor(f?f[2]:1); S.overlay='supplier'; rerender(); break;}
+  case 'sendOrder': later('sendOrder',900,()=>{S.order=S.supplier;S.overlay=null;S.stack=['home'];S.screen='gas';snack('Order sent on WhatsApp',{icon:'check_circle'})}); break;
+  case 'delivered': {const a=activeCyl(); S.order=null; saveNewCylinder({size:parseInt(S.size),color:a?a.color:'#D32F2F',supplier:S.supplierName||'',price:S.supPrice}); snack(`New ${S.size} cylinder in use · full today`,{icon:'propane_tank'}); rerender(); break;}
+  case 'cylPrev': if(S.cylPage>0){S.cylPage--;S.draft=null;S.cylPop=true;rerender()} break;
+  case 'cylNext': S.cylPage++;S.draft=null;S.cylPop=true;rerender(); break;
+  case 'cylPage': S.cylPage=+d.i;S.draft=null;S.cylPop=true;rerender(); break;
+  case 'cylFocus': S.cylPage=+d.i;S.draft=null;S.cylPop=true;rerender();$('#scr .pbody').scrollTo({top:0,behavior:'smooth'}); break;
+  case 'swapCyl': if(S.screen!=='gas'){go('gas')} S.cylPage=0;S.draft=null;S.cylPop=true;rerender();$('#scr .pbody')&&$('#scr .pbody').scrollTo({top:0,behavior:'smooth'}); break;
+  case 'cylSize': S.draft.size=+d.k; S.cylPop=true; rerender(); break;
+  case 'cylColor': S.draft.color=d.c; rerender(); break;
+  case 'cycleColor': {const i=HK_CYL_COLORS.findIndex(c=>c[1]===S.draft.color); S.draft.color=HK_CYL_COLORS[(i+1)%HK_CYL_COLORS.length][1]; rerender(); break;}
+  case 'cylStatus': S.draft.active=d.v==='1'; if(!S.draft.active&&!S.draft.end&&!S.draft.isNew)S.draft.end=TODAY; if(S.draft.active&&!S.draft.isNew)S.draft.end=null; rerender(); break;
+  case 'svcToggle': S.svcOpen=!S.svcOpen; rerender(); break;
+  case 'cylSave': {const dr={...S.draft}; const list=cylList(); const snap=JSON.stringify(list);
+    later('cylSave',650,()=>{
+      if(dr.isNew){saveNewCylinder(dr)} else {if(dr.active)list.forEach(c=>{if(c.active&&c.id!==dr.id){c.active=false;c.end=TODAY}}); const i=list.findIndex(c=>c.id===dr.id); list[i]={...dr}; S.draft=null; S.cylPage=sortedCyls().findIndex(c=>c.id===dr.id)+1}
+      snack(dr.isNew?`Logged new ${dr.size} kg cylinder`:`Updated ${dr.size} kg cylinder`,{icon:'check_circle',action:'UNDO',undo:()=>{const r=JSON.parse(snap); list.length=0; r.forEach(x=>list.push(x)); S.draft=null; S.cylPage=Math.min(S.cylPage,list.length); snack('Change undone')}});
+    }); break;}
+  case 'cylDel': {const list=cylList(); const i=list.findIndex(c=>c.id===d.id); const [rm]=list.splice(i,1); S.draft=null; S.cylPage=Math.min(S.cylPage,list.length);
+    snack(`Deleted ${rm.size} kg cylinder log`,{icon:'delete',action:'UNDO',undo:()=>{list.splice(i,0,rm);S.draft=null}}); rerender(); break;}
+  /* settings */
+  case 'notif': S.notif[d.k]=!S.notif[d.k]; rerender(); break;
+  case 'ocr': {const i=+d.i; if(i===2&&S.ocr!==2){later('ocr2',1400,()=>{S.ocr=2;snack('Slashed-zero model ready',{icon:'download_done'})})} else {S.ocr=i;rerender()} break;}
+  /* panels */
+  case 'menu': {const m=MENU.flatMap(g=>g[2]).find(x=>x[0]===d.k); if(m) m[2](); break;}
+  case 'variant': S.v=d.v; if(S.screen==='scan'){S.digits=null;S.editIdx=null;S._scanTok=0} rerender(); break;
+  case 'data': S.data=d.v; rerender(); break;
+  case 'net': S.online=d.v==='on'; if(S.online&&pending()){setTimeout(()=>{Object.values(S.readings).flat().forEach(r=>r.s='ok');rerender()},1500)} rerender(); break;
+  }
+}
+
+/* ================= SIDE PANELS ================= */
+const nav=(screen,opts={})=>()=>{S.stack=[];S.screen='home';if(opts.data)S.data=opts.data;else if(opts.data===undefined&&S.data!=='full'&&opts.reset!==false)S.data='full';if(opts.online!=null)S.online=opts.online;go(screen,opts);if(opts.overlay){S.overlay=opts.overlay;rerender()}};
+const MENU=[
+ ['Home','space_dashboard',[['home','Home dashboard',nav('home')]]],
+ ['Log','document_scanner',[['scanE','Scan electricity',nav('scan',{util:'elec'})],['scanW','Scan water',nav('scan',{util:'water'})],['manual','Type a reading',nav('manual',{util:'elec'})],['topup','Log a top-up',nav('topup')],['history','Reading history',nav('history',{util:'elec'})]]],
+ ['Usage','bolt',[['usageE','Electricity & run-out',nav('usage',{util:'elec'})],['usageW','Water usage',nav('usage',{util:'water'})]]],
+ ['Reports','monitoring',[['reports','Monthly report',nav('reports')],['period','Custom period',nav('reports',{overlay:'periodSheet'})],['export','Export PDF / CSV',nav('reports',{overlay:'exportSheet'})]]],
+ ['Share','group',[['household','Household & members',nav('household')],['share','Share join code',nav('household',{overlay:'shareSheet'})],['join','Join with a code',nav('join')],['activity','Activity feed',nav('activity')]]],
+ ['Gas','propane_tank',[['gas','Cylinder tracker',nav('gas')],['order','Order gas',nav('order')]]],
+ ['More','settings',[['notifications','Notifications',nav('notifications')],['notifsettings','Notification settings',nav('notifsettings')],['settings','Settings',nav('settings')]]],
+ ['Empty states','inbox',[['eHome','New household · Home',nav('home',{data:'empty'})],['eReports','Reports · not enough data',nav('reports',{data:'empty'})],['eUsage','Usage · not enough data',nav('usage',{data:'empty',util:'elec'})],['eHouse','Household · only you',nav('household',{data:'empty'})],['eHist','History · no readings',nav('history',{data:'empty',util:'elec'})],['eNotif','Notifications · all clear',nav('notifications',{data:'empty'})],['eGas','Gas · no cylinder',nav('gas',{data:'empty'})],['eOrder','Order · no suppliers',nav('order',{v:'none'})],['eScan','Scanner · nothing found',nav('scan',{util:'elec',v:'nothing'})]]],
+];
+function curKey(){
+  const sc=S.screen,dt=S.data;
+  if(dt==='empty'){return {home:'eHome',reports:'eReports',usage:'eUsage',household:'eHouse',history:'eHist',notifications:'eNotif',gas:'eGas'}[sc]}
+  if(sc==='scan')return S.v==='nothing'?'eScan':S.util==='water'?'scanW':'scanE';
+  if(sc==='usage')return S.util==='water'?'usageW':'usageE';
+  if(sc==='order'&&S.v==='none')return 'eOrder';
+  if(sc==='reports'&&S.overlay==='periodSheet')return 'period';
+  if(sc==='reports'&&S.overlay==='exportSheet')return 'export';
+  if(sc==='household'&&S.overlay==='shareSheet')return 'share';
+  return sc;
+}
+function renderMenu(){
+  const k=curKey();
+  $('#menu').innerHTML=`<div class="p-brand"><span class="logo">${icon('home_iot_device','fill')}</span><div><b>HouseKeeper prototype</b><a href="design-system.html">Design system →</a></div></div>
+  ${MENU.map(([g,ic,items])=>`<div class="p-group"><h6>${icon(ic)}${g}</h6>${items.map(([key,label])=>`<button class="p-link ${k===key?'is-cur':''}" data-act="menu" data-k="${key}">${label}</button>`).join('')}</div>`).join('')}`;
+}
+const NOTES={
+ home:['Home dashboard','4.3 · 4.4 · 5.9','Three one-tap tiles open the scanner (electricity, water) or the gas tracker. The run-out countdown is the headline. The gas row shows your actual cylinder, in its colour and size, with its level. Recent activity sits in its own card.',['Tap a tile to log a reading, then see it appear in Recent activity','Log a top-up and watch the countdown turn green','Tap the gas row to open the cylinder tracker','Switch Network to Offline, then save a reading']],
+ scan:['Scanner','4.3 Quick logging','The live camera reads the meter. The top bar shows which OCR model is running (tap it to cycle) and which utility you\'re logging. Uncertain digits are outlined. Tap one to fix just that digit.',['Tap the amber "?" digit and pick a number','Type the reading opens manual entry, prefilled','Save shows a snackbar with UNDO','Switch to Water at the top']],
+ manual:['Type a reading','4.3 Sense checks','Prefilled from the scanner when you come from there. Sense checks run as you type: lower than last time, or far above normal. You can always save anyway.',['Type 3700 to see the "lower than" warning','Type 3900 to see the "far above normal" warning','Type letters to see the error state','Clear the field: Save is disabled']],
+ topup:['Log a top-up','4.3 Top-ups','Records bought units so a top-up doesn\'t look like negative usage. The preview shows the new balance and how long it lasts before you save.',['Enter 120 units and watch the preview','Save, then check the Home countdown']],
+ usage:['Usage','4.4 Usage trends','Detail for one utility. Electricity shows the run-out countdown; water (postpaid) shows daily use instead. Bars are tappable.',['Tap any bar to inspect that day','Red bars are anomalies; hatched bars are projected']],
+ history:['Reading history','4.3 Edit & delete','Every reading, newest first, with sync status. Deleting asks for confirmation because it can\'t be undone and affects every member.',['Delete a reading: dialog → loading → snackbar','Save a reading offline, then check its "Waiting" badge']],
+ reports:['Monthly report','4.4 · 4.5 · 4.7','The same utility tiles as Home pick the utility, showing each one\'s month-end estimate. Below: next 7 days with confidence, month-end use and cost, the daily bar chart, and an AI suggestion.',['Tap Water or Gas tiles (confidence changes)','Tap bars to inspect days','Rate the suggestion','Open Custom period and Export']],
+ household:['Household & members','4.2 Households','Join code with QR, regenerate with confirmation, approve or decline join requests, and tap a member to change their role.',['Approve Thabo (loading → added → UNDO)','Make a new code (dialog)','Share the code (sheet)']],
+ join:['Join with a code','4.2 Join requests','Enter a code and send a request. The owner approves it, and you wait on this screen until they do.',['Type HK-4F7 and send: error state','Type HK-4F7Q2 and send: loading → waiting','Go offline first to see the retry snackbar']],
+ activity:['Activity feed','4.2 Activity','Who logged what, who bought electricity, who swapped a cylinder. It answers "did anyone buy electricity?" without a phone call.',[]],
+ gas:['Gas cylinder','4.8 · existing GasCylinderTrackerScreen','Your existing tracker, restyled. Swipe through cylinders (page 1 is a new, dashed cylinder). The drawing resizes with the size you pick and shows the projected gas level in the cylinder\'s own colour. Days left come from your past cylinders\' kg/day.',['Pick 4 / 9 / 14 / 48 kg: the cylinder resizes','Tap a colour swatch, or tap the cylinder to cycle','Open Service dates and change the start date','Swipe to a finished cylinder: see its kg/day','Swap cylinder → save a new one; the old one is finished']],
+ order:['Order gas','4.8 Ordering','Suppliers near your address with prices for the chosen size. Sponsored suppliers are labelled. The order goes through the supplier\'s own channel: HouseKeeper never takes payment.',['Change the size chip','Tap a supplier → Send order on WhatsApp']],
+ notifications:['Notifications','4.6 Reminders','Past reminders and alerts. Each one opens the screen where you can act on it.',['Tap any notification','Tune icon opens per-alert settings']],
+ notifsettings:['Notification settings','4.6 Settings','Per-household switches that apply instantly, plus quiet hours.',['Toggle a switch']],
+ settings:['Settings','4.9 Settings','Profile, app preferences, scanner model and privacy. Delete account explains what happens to a household you own.',['Choose Slashed-zero model: download progress','Delete account (dialog)']],
+};
+const VARIANTS={scan:[['scanning','Scanning'],['detected','Reading found'],['nothing','Nothing found']],join:[['enter','Enter code'],['waiting','Waiting for approval']],order:[['list','Suppliers'],['none','No suppliers']]};
+function renderNotes(){
+  const n=NOTES[S.screen]||['','','',[]]; const vs=VARIANTS[S.screen];
+  const dataOK=['home','reports','household','usage','history','notifications','gas'].includes(S.screen);
+  $('#notes').innerHTML=`<span class="spec">Spec ${n[1]}</span><h3>${n[0]}</h3><p>${n[2]}</p>
+  ${n[3].length?`<h5>Try this</h5><ul>${n[3].map(t=>`<li>${t}</li>`).join('')}</ul>`:''}
+  ${vs?`<h5>Screen state</h5><div class="chips">${vs.map(([k,l])=>`<span class="chip ${(S.v||vs[S.screen==='scan'?1:0][0])===k?'is-selected':''}" data-act="variant" data-v="${k}">${l}</span>`).join('')}</div>`:''}
+  <h5>Household data</h5><div class="chips">${[['full','Sample household'],['empty','New household'],['loading','Loading']].map(([k,l])=>`<span class="chip ${S.data===k?'is-selected':''} ${!dataOK?'is-disabled':''}" ${dataOK?`data-act="data" data-v="${k}"`:''}>${l}</span>`).join('')}</div>
+  ${!dataOK?'<p style="font-size:12px">This screen looks the same with any data.</p>':''}
+  <h5>Network</h5><div class="chips"><span class="chip ${S.online?'is-selected':''}" data-act="net" data-v="on">${icon('wifi','xs')}Online</span><span class="chip ${!S.online?'is-selected':''}" data-act="net" data-v="off">${icon('wifi_off','xs')}Offline</span></div>
+  <p style="font-size:12px">Offline: readings save on the phone with a "waiting to sync" badge and upload when you switch back.</p>
+  <h5>Crumb</h5><p style="font-size:12px;font-family:var(--mono)">${[...S.stack,S.screen].join(' → ')}</p>`;
+  $('#crumb').textContent=(n[0]||S.screen)+(S.data!=='full'&&dataOK?` · ${S.data}`:'')+(S.online?'':' · offline');
+}
+
+render();
+{const k=location.hash.slice(1);const m=MENU.flatMap(g=>g[2]).find(x=>x[0]===k);if(m)m[2]();}
+</script>
+</body>
+</html>
